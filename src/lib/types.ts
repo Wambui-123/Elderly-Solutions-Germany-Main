@@ -75,3 +75,22 @@ export type Event = {
     createdAt: Timestamp | { seconds: number; nanoseconds: number; };
     updatedAt?: Timestamp | { seconds: number; nanoseconds: number; };
 };
+
+// Matches Conversation schema
+export type Conversation = {
+    id: string;
+    name: string;
+    participantIds: string[];
+    isGroupChat: boolean;
+    createdAt: Timestamp | { seconds: number; nanoseconds: number; };
+    updatedAt?: Timestamp | { seconds: number; nanoseconds: number; };
+};
+
+// Matches Message schema
+export type Message = {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    content: string;
+    timestamp: Timestamp | { seconds: number; nanoseconds: number; };
+};
