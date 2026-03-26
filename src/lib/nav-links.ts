@@ -8,10 +8,17 @@ import {
   UsersRound,
   ClipboardPenLine,
   Stethoscope,
-  ShieldCheck
+  ShieldCheck,
+  type LucideIcon,
 } from 'lucide-react';
 
-export const ELDERLY_NAV_LINKS = [
+export type NavLink = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+export const ELDERLY_NAV_LINKS: NavLink[] = [
   { href: '/dashboard/elderly', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/elderly/health', label: 'Health', icon: HeartPulse },
   { href: '/dashboard/elderly/appointments', label: 'Appointments', icon: CalendarClock },
@@ -20,7 +27,7 @@ export const ELDERLY_NAV_LINKS = [
   { href: '/dashboard/profile', label: 'Profile', icon: CircleUserRound },
 ];
 
-export const CAREGIVER_NAV_LINKS = [
+export const CAREGIVER_NAV_LINKS: NavLink[] = [
     { href: '/dashboard/caregiver', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/caregiver/health', label: 'Patient Health', icon: ClipboardPenLine },
     { href: '/dashboard/caregiver/appointments', label: 'Appointments', icon: CalendarClock },
@@ -29,7 +36,7 @@ export const CAREGIVER_NAV_LINKS = [
     { href: '/dashboard/profile', label: 'Profile', icon: CircleUserRound },
 ];
 
-export const PROFESSIONAL_NAV_LINKS = [
+export const PROFESSIONAL_NAV_LINKS: NavLink[] = [
     { href: '/dashboard/professional', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/professional/health', label: 'Patient Vitals', icon: Stethoscope },
     { href: '/dashboard/professional/appointments', label: 'Appointments', icon: CalendarClock },
@@ -38,6 +45,7 @@ export const PROFESSIONAL_NAV_LINKS = [
     { href: '/dashboard/profile', label: 'Profile', icon: CircleUserRound },
 ];
 
-export const ADMIN_NAV_LINKS = [
+export const ADMIN_NAV_LINKS: NavLink[] = [
     { href: '/dashboard/admin', label: 'Dashboard', icon: ShieldCheck },
+    { href: '/dashboard/profile', label: 'Profile', icon: CircleUserRound },
 ];
