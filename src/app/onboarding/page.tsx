@@ -144,13 +144,6 @@ export default function OnboardingPage() {
             { title: "Link to Patient", description: `Find the patient you'll be caring for by searching their email address.`, icon: <Search />, content: <CaregiverStep1 onComplete={setLinkedPatient} /> }
         ];
     }
-
-    useEffect(() => {
-        // If a caregiver has linked a patient, move to the (virtual) next step for submission.
-        if (linkedPatient) {
-            setStep(step + 1);
-        }
-    }, [linkedPatient, step]);
     
     if (loading || !user) {
         return (
@@ -178,7 +171,6 @@ export default function OnboardingPage() {
     const handleBack = () => {
         if (step > 1) {
             setStep(step - 1);
-            if (linkedPatient) setLinkedPatient(null);
         }
     };
 
@@ -263,9 +255,17 @@ export default function OnboardingPage() {
                             Next <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     ) : (
-                         <Button onClick={handleSubmit} disabled={isSubmitting || ( (user.role === 'caregiver' || user.role === 'professional') && !linkedPatient)}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Complete Setup
+                         <Button onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (user.role === 'caregiver' || user.role === 'professional') && !linkedPatient ? (
+                                <span>Skip and Finish</span>
+                            ) : (
+                                <>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    <span>Complete Setup</span>
+                                </>
+                            )}
                         </Button>
                     )}
                 </div>
