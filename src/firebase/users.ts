@@ -1,9 +1,9 @@
 "use client";
 
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { initializeFirebase } from '.'; // Using the initialized instance
 import type { User as FirebaseAuthUser } from 'firebase/auth';
-import type { Role } from '@/lib/types';
+import type { Role, User } from '@/lib/types';
 
 const { firestore } = initializeFirebase();
 
@@ -27,12 +27,13 @@ export async function createUserProfile(user: FirebaseAuthUser, data: UserProfil
 
     // If the document doesn't exist, create it.
     const userProfile = {
-        uid: user.uid,
+        id: user.uid,
         name: data.name,
         email: data.email,
         role: data.role,
         avatarUrl: user.photoURL || `https://avatar.vercel.sh/${user.uid}.png`, // Default avatar
         createdAt: serverTimestamp(),
+        hasCompletedOnboarding: false, // Set onboarding to false for new users
     };
     await setDoc(userDocRef, userProfile);
     return userProfile;
@@ -46,4 +47,13 @@ export async function getUserProfile(uid: string) {
     } else {
         return null;
     }
+}
+
+
+export async function updateUserProfile(uid: string, data: Partial<User>) {
+    const userDocRef = doc(firestore, 'users', uid);
+    await updateDoc(userDocRef, {
+        ...data,
+        updatedAt: serverTimestamp()
+    });
 }

@@ -6,6 +6,7 @@ export type User = {
   email: string;
   avatarUrl: string;
   role: Role;
+  hasCompletedOnboarding?: boolean;
 };
 
 export type Patient = {

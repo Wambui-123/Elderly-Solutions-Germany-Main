@@ -60,6 +60,10 @@
           "description": "Timestamp when the user profile was last updated.",
           "format": "date-time"
         },
+        "hasCompletedOnboarding": {
+            "type": "boolean",
+            "description": "Indicates if the user has completed the initial onboarding flow."
+        },
         "accessibilitySettingsId": {
           "type": "string",
           "description": "Reference to the user's accessibility settings. (Relationship: UserProfile 1:1 AccessibilitySettings)"
@@ -97,6 +101,7 @@
         "lastName",
         "role",
         "createdAt",
+        "hasCompletedOnboarding",
         "accessibilitySettingsId",
         "notificationSettingsId"
       ]

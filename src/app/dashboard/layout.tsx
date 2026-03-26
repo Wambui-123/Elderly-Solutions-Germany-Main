@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
@@ -27,6 +27,7 @@ export default function DashboardLayout({
   const { user, loading, firebaseUser } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     if(auth) {
@@ -36,15 +37,20 @@ export default function DashboardLayout({
   };
 
   useEffect(() => {
-    // If loading is finished and there's no authenticated user, redirect.
-    if (!loading && !firebaseUser) {
-      router.replace('/login');
+    if (!loading) {
+      if (!firebaseUser) {
+        // User is not logged in, redirect to login page.
+        router.replace('/login');
+      } else if (user && user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
+        // User is logged in but hasn't completed onboarding.
+        router.replace('/onboarding');
+      }
     }
-  }, [loading, firebaseUser, router]);
+  }, [loading, firebaseUser, user, pathname, router]);
 
-  // While loading auth state or user profile, show a spinner.
-  // This combines the initial auth check and the profile fetch into one loading state.
-  if (loading) {
+  // Show a loader while we are still checking auth state OR if the user profile hasn't been fetched yet.
+  // This prevents content flashing and ensures we have the user's role and onboarding status.
+  if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -55,15 +61,14 @@ export default function DashboardLayout({
     );
   }
 
-  // If loading is done but we still don't have a user (even with a firebaseUser),
-  // it means they're not in the DB or there's an issue. Redirecting is safest.
-  if (!user) {
-    // A useEffect will handle the redirect, so we can just show a loader here.
-    return (
-        <div className="flex h-screen items-center justify-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-    );
+  // If user has not completed onboarding, and we're not on the onboarding page, show loader
+  // while the useEffect redirects them. This prevents showing the main dashboard layout.
+  if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
+      return (
+          <div className="flex h-screen items-center justify-center">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          </div>
+      );
   }
 
 
@@ -101,7 +106,7 @@ export default function DashboardLayout({
         <Button
           variant="default"
           size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-50 lg:hidden"
         >
           <Icons.logo className="h-7 w-7" />
           <span className="sr-only">Open AI Chat</span>
