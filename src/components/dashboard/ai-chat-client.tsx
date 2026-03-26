@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { SendHorizonal, Bot, User, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff, Volume2, Phone } from 'lucide-react';
+import { SendHorizonal, Bot, User, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff, Volume2, Phone, Cog } from 'lucide-react';
 import Image from 'next/image';
 
 import { caregiverAIHealthCompanion } from '@/ai/flows/caregiver-ai-health-companion';
@@ -35,6 +35,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { DialogTitle as ShadcnDialogTitle } from '../ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type Message = {
   id: string;
@@ -117,6 +120,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [outputLanguage, setOutputLanguage] = useState('en');
   
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [activeAudioId, setActiveAudioId] = useState<string | null>(null);
@@ -125,6 +129,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const recognitionRef = useRef<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const config = roleConfig[role];
 
@@ -132,6 +137,10 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
     resolver: zodResolver(chatSchema),
     defaultValues: { prompt: '' },
   });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -242,12 +251,12 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
 
         if (imageFile) {
             const dataUri = await fileToDataUri(imageFile);
-            const result = await medicationIdentifierAI({ photoDataUri: dataUri, question: data.prompt });
+            const result = await medicationIdentifierAI({ photoDataUri: dataUri, question: data.prompt, language: outputLanguage });
             aiResponseContent = result.identification;
             aiResponseText = result.identification;
 
         } else if (role === 'professional') {
-            const result = await professionalPatientSummaryAI({ patientName: 'Patient X', healthLogs: data.prompt.split('\n') });
+            const result = await professionalPatientSummaryAI({ patientName: 'Patient X', healthLogs: data.prompt.split('\n'), language: outputLanguage });
             const concernsList = result.concerns && result.concerns.length > 0 ? `Concerns:\n${result.concerns.map(c => `- ${c}`).join('\n')}` : '';
             const highlightsList = result.highlights && result.highlights.length > 0 ? `Highlights:\n${result.highlights.map(h => `- ${h}`).join('\n')}` : '';
             aiResponseText = `Summary: ${result.summary}\n${concernsList}\n${highlightsList}`;
@@ -269,7 +278,10 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
               </div>
             );
         } else {
-          const result = await config.action(role === 'caregiver' ? { question: data.prompt } : { query: data.prompt }) as any;
+          const payload = role === 'caregiver' 
+              ? { question: data.prompt, language: outputLanguage }
+              : { query: data.prompt, language: outputLanguage };
+          const result = await config.action(payload) as any;
           aiResponseText = result.advice || result.clarification;
           
           if (result.isEmergency) {
@@ -326,20 +338,52 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
         setIsLoading(false);
     }
   };
+  
+  const showSuggestions = isPopup && (messages.length === 0 || (messages[messages.length - 1]?.sender === 'ai' && !isLoading));
 
   return (
     <Card className="flex h-full flex-col">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <ShadcnDialogTitle asChild>
             <CardTitle className="flex items-center gap-2">
                 <Bot />
                 {isPopup ? 'AI Assistant' : config.title}
             </CardTitle>
         </ShadcnDialogTitle>
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Cog className="h-5 w-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60">
+                 <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">AI Settings</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Customize assistant behavior.
+                        </p>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="language">Response Language</Label>
+                        <Select value={outputLanguage} onValueChange={setOutputLanguage}>
+                            <SelectTrigger id="language" className="h-9">
+                                <SelectValue placeholder="Select language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="en">English</SelectItem>
+                                <SelectItem value="de">German</SelectItem>
+                                <SelectItem value="es">Spanish</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="space-y-4 pr-4">
+        <ScrollArea className="h-full pr-4">
+          <div className="space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -384,6 +428,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
                 </div>
               </div>
             )}
+             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </CardContent>
@@ -396,7 +441,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
                 </Button>
             </div>
          )}
-         {isPopup && (
+         {showSuggestions && (
             <div className='w-full'>
                  <p className="text-xs font-medium text-muted-foreground mb-2">Suggestions:</p>
                 <div className="flex flex-wrap gap-2">

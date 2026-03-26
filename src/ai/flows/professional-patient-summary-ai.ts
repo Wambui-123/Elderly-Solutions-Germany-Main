@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const ProfessionalPatientSummaryAIInputSchema = z.object({
   patientName: z.string().describe("The name of the patient."),
   healthLogs: z.array(z.string()).describe("A list of recent health log entries for the patient. Each entry should be a concise summary of a health event or measurement, including date/time, type of log (e.g., vital, medication, general note), and the value/details."),
+  language: z.string().optional().describe('The language for the AI response (e.g., "en", "de"). Default is "en".'),
 });
 export type ProfessionalPatientSummaryAIInput = z.infer<typeof ProfessionalPatientSummaryAIInputSchema>;
 
@@ -31,6 +32,7 @@ const professionalPatientSummaryPrompt = ai.definePrompt({
   input: {schema: ProfessionalPatientSummaryAIInputSchema},
   output: {schema: ProfessionalPatientSummaryAIOutputSchema},
   prompt: `You are an AI assistant specialized in summarizing patient health records for medical professionals. Your goal is to provide a concise overview of a patient's recent health status, highlighting any significant changes or potential concerns.
+Your response must be in the language with this ISO 639-1 code: {{{language}}}.
 
 Patient Name: {{{patientName}}}
 

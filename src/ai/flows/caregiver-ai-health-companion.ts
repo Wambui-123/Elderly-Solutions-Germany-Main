@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 const CaregiverAIHealthCompanionInputSchema = z.object({
   question: z.string().describe('The caregiver\'s question regarding elderly conditions or daily care routines.'),
+  language: z.string().optional().describe('The language for the AI response (e.g., "en", "de"). Default is "en".'),
 });
 export type CaregiverAIHealthCompanionInput = z.infer<typeof CaregiverAIHealthCompanionInputSchema>;
 
@@ -29,7 +30,8 @@ const caregiverAIHealthCompanionPrompt = ai.definePrompt({
   name: 'caregiverAIHealthCompanionPrompt',
   input: {schema: CaregiverAIHealthCompanionInputSchema},
   output: {schema: CaregiverAIHealthCompanionOutputSchema},
-  prompt: `You are an AI Health Companion designed to assist caregivers in Germany. Your role is to provide relevant and personalized advice on managing common elderly conditions and daily care routines.
+  prompt: `You are an AI Health Companion designed to assist caregivers. Your role is to provide relevant and personalized advice on managing common elderly conditions and daily care routines.
+Your response must be in the language with this ISO 639-1 code: {{{language}}}.
 
 IMPORTANT: If the user's question describes a potential medical emergency (e.g., "my father fell and can't get up", "chest pain", "difficulty breathing", "unconscious"), you MUST set the "isEmergency" flag to true and your advice should be to call emergency services immediately. For all other questions, provide practical, actionable insights.
 

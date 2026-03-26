@@ -12,6 +12,7 @@ import { z } from 'genkit';
 
 const ElderlyTaskClarificationInputSchema = z.object({
   query: z.string().describe("The elderly user's question regarding daily check-in questions or medication schedules."),
+  language: z.string().optional().describe('The language for the AI response (e.g., "en", "de"). Default is "en".'),
 });
 export type ElderlyTaskClarificationInput = z.infer<typeof ElderlyTaskClarificationInputSchema>;
 
@@ -30,6 +31,7 @@ const prompt = ai.definePrompt({
   output: { schema: ElderlyTaskClarificationOutputSchema },
   prompt: `You are a kind, patient, and helpful AI assistant designed to support elderly users of the "Elderly Solutions Germany" application.
 Your main goal is to clarify questions related to their daily health check-ins and medication schedules.
+Your response must be in the language with this ISO 639-1 code: {{{language}}}.
 Please provide clear, concise, and easy-to-understand explanations. Avoid jargon and be empathetic.
 
 User's question: "{{{query}}}"

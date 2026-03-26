@@ -17,6 +17,7 @@ const MedicationIdentifierAIInputSchema = z.object({
       "A photo of a pill or medication, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
   question: z.string().optional().describe('An optional question from the user about the medication.'),
+  language: z.string().optional().describe('The language for the AI response (e.g., "en", "de"). Default is "en".'),
 });
 export type MedicationIdentifierAIInput = z.infer<typeof MedicationIdentifierAIInputSchema>;
 
@@ -34,6 +35,7 @@ const prompt = ai.definePrompt({
   input: {schema: MedicationIdentifierAIInputSchema},
   output: {schema: MedicationIdentifierAIOutputSchema},
   prompt: `You are an AI assistant helping a user identify medication from a photo. Your task is to analyze the image and provide information about the likely medication shown.
+Your response must be in the language with this ISO 639-1 code: {{{language}}}.
 
 IMPORTANT: You must include the following disclaimer at the beginning of your response, enclosed in a markdown block quote:
 > **Disclaimer:** I am an AI assistant. This information is for identification purposes only and is not a substitute for professional medical advice. Always consult with a qualified healthcare provider or pharmacist before taking any medication.
