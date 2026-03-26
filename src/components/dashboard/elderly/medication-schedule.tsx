@@ -2,25 +2,29 @@
 
 import { useMemo } from 'react';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import type { Medication, MedicationAdherence } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Pill } from 'lucide-react';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export function MedicationSchedule() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const startOfDayTimestamp = Timestamp.fromDate(startOfDay);
-  const endOfDayTimestamp = Timestamp.fromDate(endOfDay);
+  const { startOfDayTimestamp, endOfDayTimestamp } = useMemo(() => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    return {
+        startOfDayTimestamp: Timestamp.fromDate(startOfDay),
+        endOfDayTimestamp: Timestamp.fromDate(endOfDay),
+    };
+  }, []);
 
   const medicationsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -51,7 +55,7 @@ export function MedicationSchedule() {
         medicationId: medication.id,
         patientId: user.id,
         scheduledTime: Timestamp.now(), // This should ideally be the actual scheduled time
-        actualTakenTime: serverTimestamp(),
+        actualTakenTime: serverTimestamp() as Timestamp,
         adherenceStatus: 'Taken',
         recordedByUserId: user.id,
     };

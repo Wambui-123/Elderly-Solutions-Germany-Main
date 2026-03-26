@@ -17,6 +17,7 @@ export type CaregiverAIHealthCompanionInput = z.infer<typeof CaregiverAIHealthCo
 
 const CaregiverAIHealthCompanionOutputSchema = z.object({
   advice: z.string().describe('Personalized and relevant advice for the caregiver.'),
+  isEmergency: z.boolean().optional().describe('Set to true if the query describes a potential medical emergency.'),
 });
 export type CaregiverAIHealthCompanionOutput = z.infer<typeof CaregiverAIHealthCompanionOutputSchema>;
 
@@ -28,11 +29,13 @@ const caregiverAIHealthCompanionPrompt = ai.definePrompt({
   name: 'caregiverAIHealthCompanionPrompt',
   input: {schema: CaregiverAIHealthCompanionInputSchema},
   output: {schema: CaregiverAIHealthCompanionOutputSchema},
-  prompt: `You are an AI Health Companion designed to assist caregivers in Germany. Your role is to provide relevant and personalized advice on managing common elderly conditions and daily care routines. Focus on practical, actionable insights, and ensure the advice is tailored to the context of elderly care.
+  prompt: `You are an AI Health Companion designed to assist caregivers in Germany. Your role is to provide relevant and personalized advice on managing common elderly conditions and daily care routines.
+
+IMPORTANT: If the user's question describes a potential medical emergency (e.g., "my father fell and can't get up", "chest pain", "difficulty breathing", "unconscious"), you MUST set the "isEmergency" flag to true and your advice should be to call emergency services immediately. For all other questions, provide practical, actionable insights.
 
 Caregiver's Question: {{{question}}}
 
-Please provide comprehensive advice, addressing all aspects of the caregiver's question.`,
+Please analyze the question and provide your response.`,
 });
 
 const caregiverAIHealthCompanionFlow = ai.defineFlow(

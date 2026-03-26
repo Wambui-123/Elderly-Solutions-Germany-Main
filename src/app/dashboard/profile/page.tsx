@@ -1,5 +1,10 @@
 "use client";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useEffect, useState } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +15,39 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useUser } from "@/firebase";
 import { Loader2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { updateUserProfile } from "@/firebase/users";
+import { useToast } from "@/hooks/use-toast";
+
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  contactNumber: z.string().optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 
 export default function ProfilePage() {
     const { user, loading } = useUser();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            name: '',
+            contactNumber: '',
+        }
+    });
+    
+    useEffect(() => {
+        if (user) {
+            form.reset({
+                name: user.name || '',
+                contactNumber: user.contactNumber || '',
+            });
+        }
+    }, [user, form]);
 
     if (loading) {
         return (
@@ -25,6 +59,26 @@ export default function ProfilePage() {
 
     if (!user) {
         return <p>User not found. Please log in again.</p>
+    }
+
+    const onSubmit = async (data: ProfileFormValues) => {
+        setIsSaving(true);
+        try {
+            await updateUserProfile(user.id, data);
+            toast({
+                title: "Profile Updated",
+                description: "Your changes have been saved successfully.",
+            });
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: "Could not save your profile changes.",
+            });
+            console.error("Profile update failed:", error);
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     return (
@@ -45,22 +99,53 @@ export default function ProfilePage() {
                     </Card>
                 </div>
                 <div className="md:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Personal Information</CardTitle>
-                            <CardDescription>Update your personal details here.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" defaultValue={user.name} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" defaultValue={user.email} readOnly />
-                            </div>
-                             <Button>Save Changes</Button>
-                        </CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Personal Information</CardTitle>
+                                    <CardDescription>Update your personal details here.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Label>Full Name</Label>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="contactNumber"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Label>Phone Number</Label>
+                                                <FormControl>
+                                                    <Input placeholder="Your contact phone number" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email Address</Label>
+                                        <Input id="email" type="email" defaultValue={user.email} readOnly disabled />
+                                    </div>
+                                    <Button type="submit" disabled={isSaving}>
+                                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Save Changes
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </form>
+                    </Form>
+                    <Card className="mt-6">
                         <Separator className="my-6" />
                         <CardHeader>
                             <CardTitle>Accessibility</CardTitle>

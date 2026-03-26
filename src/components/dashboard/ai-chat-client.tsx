@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
+import { SendHorizonal, Bot, User, Loader2, Paperclip, X, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
 
 import { caregiverAIHealthCompanion } from '@/ai/flows/caregiver-ai-health-companion';
 import { clarifyElderlyTask } from '@/ai/flows/elderly-task-clarification-ai';
 import { professionalPatientSummaryAI } from '@/ai/flows/professional-patient-summary-ai';
+import { medicationIdentifierAI } from '@/ai/flows/medication-identification-ai';
 
 import type { Role } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 type Message = {
   sender: 'user' | 'ai';
@@ -57,9 +60,23 @@ const roleConfig = {
     }
 }
 
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+
 export function AIChatClient({ role, userAvatar }: AIChatClientProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const config = roleConfig[role];
 
   const form = useForm<ChatFormValues>({
@@ -67,15 +84,48 @@ export function AIChatClient({ role, userAvatar }: AIChatClientProps) {
     defaultValues: { prompt: '' },
   });
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
   const handleSendMessage = async (data: ChatFormValues) => {
     setIsLoading(true);
-    const userMessage: Message = { sender: 'user', text: data.prompt };
+    let userMessageText: React.ReactNode = data.prompt;
+
+    // If there's an image, create a combined message
+    if (imagePreview) {
+        userMessageText = (
+            <div className="space-y-2">
+                <Image src={imagePreview} alt="Uploaded preview" width={100} height={100} className="rounded-md" />
+                <p>{data.prompt}</p>
+            </div>
+        )
+    }
+
+    const userMessage: Message = { sender: 'user', text: userMessageText };
     setMessages((prev) => [...prev, userMessage]);
     form.reset();
+    setImageFile(null);
+    setImagePreview(null);
 
     try {
         let aiResponseText: string | React.ReactNode = "Sorry, I couldn't get a response.";
-        if (role === 'professional') {
+
+        if (imageFile) {
+            // Handle medication identification with image
+            const dataUri = await fileToDataUri(imageFile);
+            const result = await medicationIdentifierAI({ photoDataUri: dataUri, question: data.prompt });
+            aiResponseText = result.identification;
+
+        } else if (role === 'professional') {
             const result = await professionalPatientSummaryAI({ patientName: 'Patient X', healthLogs: data.prompt.split('\n') });
             aiResponseText = (
               <div>
@@ -95,8 +145,27 @@ export function AIChatClient({ role, userAvatar }: AIChatClientProps) {
               </div>
             );
         } else {
-          const result = await config.action(role === 'caregiver' ? { question: data.prompt } : { query: data.prompt });
-          aiResponseText = (result as any).advice || (result as any).clarification;
+          // Handle regular text-based queries
+          const result = await config.action(role === 'caregiver' ? { question: data.prompt } : { query: data.prompt }) as any;
+          
+          if (result.isEmergency) {
+             aiResponseText = (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Potential Emergency Detected</AlertTitle>
+                    <AlertDescription className="space-y-4">
+                        <p>{result.advice}</p>
+                        <Button asChild>
+                            <a href="tel:112">
+                                Call Emergency Services (112)
+                            </a>
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+             )
+          } else {
+             aiResponseText = result.advice || result.clarification;
+          }
         }
 
         const aiMessage: Message = { sender: 'ai', text: aiResponseText };
@@ -163,9 +232,21 @@ export function AIChatClient({ role, userAvatar }: AIChatClientProps) {
           </div>
         </ScrollArea>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col items-start gap-2">
+         {imagePreview && (
+            <div className="relative">
+                <Image src={imagePreview} alt="upload preview" width={60} height={60} className="rounded-md"/>
+                <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => {setImageFile(null); setImagePreview(null)}}>
+                    <X className="h-4 w-4" />
+                </Button>
+            </div>
+         )}
         <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSendMessage)} className="flex w-full items-start gap-2">
+                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+                 <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                    <Paperclip className="h-5 w-5" />
+                </Button>
                 <FormField
                 control={form.control}
                 name="prompt"

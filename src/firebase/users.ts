@@ -1,9 +1,11 @@
 "use client";
 
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs, arrayUnion, Timestamp } from 'firebase/firestore';
 import { initializeFirebase } from '.'; // Using the initialized instance
 import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { Role, User } from '@/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 const { firestore } = initializeFirebase();
 
@@ -32,7 +34,7 @@ export async function createUserProfile(user: FirebaseAuthUser, data: UserProfil
         email: data.email!,
         role: data.role,
         avatarUrl: user.photoURL || `https://avatar.vercel.sh/${user.uid}.png`, // Default avatar
-        createdAt: serverTimestamp(),
+        createdAt: serverTimestamp() as Timestamp,
         hasCompletedOnboarding: false, // Set onboarding to false for new users
         caregiverIds: [],
         professionalIds: [],
@@ -52,12 +54,27 @@ export async function getUserProfile(uid: string): Promise<User | null> {
     }
 }
 
-export async function updateUserProfile(uid: string, data: Partial<User>) {
+export function updateUserProfile(uid: string, data: Partial<User>) {
     const userDocRef = doc(firestore, 'users', uid);
-    await updateDoc(userDocRef, {
+    const dataToUpdate = {
         ...data,
         updatedAt: serverTimestamp()
-    });
+    }
+    
+    // Non-blocking update with error handling
+    updateDoc(userDocRef, dataToUpdate)
+        .catch(error => {
+            errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update',
+                    requestResourceData: dataToUpdate,
+                })
+            );
+            // Re-throw the original error to allow for local catch blocks if needed
+            throw error;
+        });
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
