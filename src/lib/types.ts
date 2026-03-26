@@ -61,3 +61,17 @@ export type MedicationAdherence = {
     notes?: string;
     recordedByUserId: string;
 };
+
+// Matches Event schema
+export type Event = {
+    id: string;
+    title: string;
+    description: string;
+    startTime: Timestamp | { seconds: number; nanoseconds: number; };
+    endTime: Timestamp | { seconds: number; nanoseconds: number; };
+    location: string;
+    organizerId: string;
+    attendeeIds: string[];
+    createdAt: Timestamp | { seconds: number; nanoseconds: number; };
+    updatedAt?: Timestamp | { seconds: number; nanoseconds: number; };
+};
