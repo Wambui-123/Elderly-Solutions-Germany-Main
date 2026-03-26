@@ -38,20 +38,29 @@ export default function DashboardLayout({
   };
 
   useEffect(() => {
-    if (loading) return;
+    // This effect handles redirection logic after loading is complete.
+    if (loading) return; // Do nothing while loading
 
     if (!firebaseUser) {
+      // If no authenticated user, redirect to login
       router.replace('/login');
     } else if (user) {
+      // If we have our custom user object
       if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
+        // And they haven't completed onboarding, redirect them there
         router.replace('/onboarding');
       } else if (user.hasCompletedOnboarding === true && pathname === '/onboarding') {
+        // If they have completed onboarding and are on the onboarding page, move them to the dashboard
         router.replace('/dashboard');
       }
     }
+    // If firebaseUser exists but user object doesn't, it means the profile is likely still being created.
+    // The loading screen will continue to show in this case.
   }, [loading, firebaseUser, user, pathname, router]);
 
-  if (loading || !user) {
+  // This is the single, reliable loading state.
+  // It shows until we have both the firebaseUser and our custom user profile.
+  if (loading || !user || (firebaseUser && !user)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -62,6 +71,8 @@ export default function DashboardLayout({
     );
   }
 
+  // This check is a safeguard for the edge case where a user is on the onboarding
+  // page but their data says they've already completed it.
   if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
       return (
           <div className="flex h-screen items-center justify-center">
@@ -111,7 +122,7 @@ export default function DashboardLayout({
             </Button>
           </DialogTrigger>
           <DialogContent className="p-0 border-0 max-w-lg">
-            <AIChatClient role={user.role} userAvatar={user.avatarUrl} />
+            <AIChatClient role={user.role} userAvatar={user.avatarUrl} isPopup={true} />
           </DialogContent>
         </Dialog>
       </div>
