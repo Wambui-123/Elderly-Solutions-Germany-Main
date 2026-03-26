@@ -1,7 +1,6 @@
 import { Icons } from "@/components/icons";
 import { Header } from "@/components/dashboard/header";
 import { MainNav } from "@/components/dashboard/main-nav";
-import { MobileNav } from "@/components/dashboard/mobile-nav";
 import {
   Sidebar,
   SidebarContent,
@@ -53,7 +52,6 @@ export default function DashboardLayout({
                 </Link>
             </Button>
         </SidebarInset>
-        <MobileNav />
       </div>
     </SidebarProvider>
   );

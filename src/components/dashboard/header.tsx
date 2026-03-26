@@ -1,6 +1,5 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/dashboard/user-nav';
-import { Icons } from '@/components/icons';
 
 export function Header() {
   return (
@@ -8,10 +7,6 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
-            <div className="hidden items-center gap-2 md:flex">
-                <Icons.logo className="h-6 w-6 text-primary" />
-                <span className="font-headline text-lg font-bold">Elderly Solutions</span>
-            </div>
         </div>
 
         <div className="flex items-center gap-4">
