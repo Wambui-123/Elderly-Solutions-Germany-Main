@@ -338,8 +338,8 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
         </ShadcnDialogTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">
-        <ScrollArea className="h-full pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="h-full">
+          <div className="space-y-4 pr-4">
             {messages.map((message) => (
               <div
                 key={message.id}

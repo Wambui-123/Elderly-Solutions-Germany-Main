@@ -18,7 +18,7 @@ import { useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useEffect } from "react";
 import { useAuth } from "@/firebase";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AIChatClient } from "@/components/dashboard/ai-chat-client";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 
@@ -79,13 +79,7 @@ export default function DashboardLayout({
         <Header />
         <div className="flex h-[calc(100vh-4rem)]">
           <Sidebar collapsible="icon">
-            <SidebarHeader>
-              <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                <span className="font-headline text-lg font-bold group-data-[collapsible=icon]:hidden">
-                  Elderly Solutions
-                </span>
-              </div>
-            </SidebarHeader>
+            <SidebarHeader />
             <SidebarContent>
               <MainNav />
             </SidebarContent>
@@ -114,6 +108,7 @@ export default function DashboardLayout({
             </Button>
           </DialogTrigger>
           <DialogContent className="p-0 border-0 max-w-md w-full h-[90vh] md:h-[70vh] md:max-h-[700px]">
+            <DialogTitle className="sr-only">AI Assistant</DialogTitle>
             <AIChatClient role={user.role} userAvatar={user.avatarUrl} isPopup={true} />
           </DialogContent>
         </Dialog>
