@@ -7,6 +7,15 @@ export type User = {
   avatarUrl: string;
   role: Role;
   hasCompletedOnboarding?: boolean;
+  createdAt?: any; 
+  updatedAt?: any;
+  // Onboarding fields
+  mobilityNeeds?: string;
+  healthAlerts?: string;
+  // Relationship IDs
+  managedPatientIds?: string[];
+  caregiverIds?: string[];
+  professionalIds?: string[];
 };
 
 export type Patient = {

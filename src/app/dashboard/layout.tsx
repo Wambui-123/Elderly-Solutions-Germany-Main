@@ -15,7 +15,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { useEffect } from "react";
 
 
@@ -37,20 +36,30 @@ export default function DashboardLayout({
   };
 
   useEffect(() => {
-    if (!loading) {
-      if (!firebaseUser) {
-        // User is not logged in, redirect to login page.
-        router.replace('/login');
-      } else if (user && user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
-        // User is logged in but hasn't completed onboarding.
+    if (loading) return; // Wait until the auth state is determined
+
+    if (!firebaseUser) {
+      // If not logged in, redirect to the login page.
+      router.replace('/login');
+    } else if (user) {
+      // If we have the full user profile from Firestore
+      if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
+        // and they haven't onboarded, redirect them to onboarding.
         router.replace('/onboarding');
+      } else if (user.hasCompletedOnboarding === true && pathname === '/onboarding') {
+        // and they have onboarded but are on the onboarding page, send to dashboard.
+        router.replace('/dashboard');
       }
     }
+    // If firebaseUser exists but `user` doesn't, it's a transient state while the
+    // Firestore document is being read for the first time. The loading screen below will be shown.
   }, [loading, firebaseUser, user, pathname, router]);
 
   // Show a loader while we are still checking auth state OR if the user profile hasn't been fetched yet.
   // This prevents content flashing and ensures we have the user's role and onboarding status.
   if (loading || !user) {
+     // This condition covers the initial auth check and the subsequent Firestore user profile fetch.
+     // It prevents rendering the dashboard until we have the complete user object.
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -101,17 +110,17 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
-      <MobileNav />
        <Link href="/dashboard/knowledge">
         <Button
           variant="default"
           size="icon"
-          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-50 lg:hidden"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hidden lg:flex"
+          aria-label="Open AI Chat"
         >
           <Icons.logo className="h-7 w-7" />
-          <span className="sr-only">Open AI Chat</span>
         </Button>
       </Link>
+      <MobileNav />
     </div>
   );
 }

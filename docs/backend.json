@@ -64,6 +64,14 @@
             "type": "boolean",
             "description": "Indicates if the user has completed the initial onboarding flow."
         },
+        "mobilityNeeds": {
+          "type": "string",
+          "description": "User-provided details about their mobility requirements."
+        },
+        "healthAlerts": {
+          "type": "string",
+          "description": "User-provided critical health information like allergies or chronic conditions."
+        },
         "accessibilitySettingsId": {
           "type": "string",
           "description": "Reference to the user's accessibility settings. (Relationship: UserProfile 1:1 AccessibilitySettings)"
