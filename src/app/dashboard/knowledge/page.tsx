@@ -1,25 +1,39 @@
-"use client";
-
-import { AIChatClient } from "@/components/dashboard/ai-chat-client";
-import { useUser } from "@/firebase";
-import { Loader2, BookOpen } from "lucide-react";
+import { generateKnowledgeArticle, type KnowledgeArticleOutput } from '@/ai/flows/knowledge-hub-ai';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen } from "lucide-react";
+
+const ArticleCard = ({ article }: { article: KnowledgeArticleOutput }) => (
+    <Card className="flex flex-col">
+        <CardHeader>
+            <CardTitle>{article.title}</CardTitle>
+            <CardDescription>{article.introduction}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            {article.sections.map((section, index) => (
+                <div key={index}>
+                    <h3 className="font-semibold mb-2">{section.heading}</h3>
+                    <p className="text-muted-foreground whitespace-pre-line">{section.content}</p>
+                </div>
+            ))}
+        </CardContent>
+    </Card>
+);
 
 
-export default function KnowledgePage() {
-    const { user, loading } = useUser();
+export default async function KnowledgePage() {
+    const topics = [
+        "Simple exercises for maintaining mobility in seniors",
+        "The importance of hydration for the elderly",
+        "Tips for a healthy, balanced diet after 60"
+    ];
 
-    if (loading) {
-        return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            </div>
+    let articles: KnowledgeArticleOutput[] = [];
+    try {
+        articles = await Promise.all(
+            topics.map(topic => generateKnowledgeArticle({ topic, language: 'en' }))
         );
-    }
-
-    if (!user) {
-        // Should be handled by layout, but as a fallback
-        return <p>Please log in to access the AI Knowledge Hub.</p>;
+    } catch (error) {
+        console.error("Failed to generate knowledge articles:", error);
     }
 
 
@@ -31,8 +45,19 @@ export default function KnowledgePage() {
             </div>
            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                     <AIChatClient role={user.role} userAvatar={user.avatarUrl} isPopup={false} />
+                <div className="lg:col-span-2 space-y-6">
+                     {articles.length > 0 ? (
+                        articles.map((article, index) => <ArticleCard key={index} article={article} />)
+                     ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Content Not Available</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">We're currently unable to load the AI-generated articles. Please try again later.</p>
+                            </CardContent>
+                        </Card>
+                     )}
                 </div>
                 <div className="space-y-6">
                     <Card>
