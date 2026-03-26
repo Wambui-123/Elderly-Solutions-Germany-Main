@@ -54,7 +54,7 @@ export default async function KnowledgePage() {
                                 <CardTitle>Content Not Available</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">We're currently unable to load the AI-generated articles. Please try again later.</p>
+                                <p className="text-muted-foreground">We're currently unable to load the AI-generated articles. This may be due to a missing API key. Please check your environment configuration.</p>
                             </CardContent>
                         </Card>
                      )}
