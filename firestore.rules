@@ -171,7 +171,7 @@ service cloud.firestore {
      * @principle Enforces membership for conversation access.
      */
     match /conversations/{conversationId} {
-        allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+        allow read, write: if isSignedIn() && request.auth.uid in resource.data.get('participantIds', []);
     }
 
     /**
@@ -232,13 +232,14 @@ service cloud.firestore {
     /**
      * @description Stand-alone events not tied to a specific community.
      * @path /events/{eventId}
-     * @allow (read, create) An authenticated user can create events and read them if they are an attendee.
+     * @allow (get, list) An authenticated user can list events they are attending.
+     * @allow (get) An authenticated user can get a specific event they are an attendee of.
      * @deny (update) A user who did not create the event trying to change its time.
      * @principle Implements a public-read (if attendee), owner-only write model.
      */
     match /events/{eventId} {
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.organizerId || request.auth.uid in resource.data.attendeeIds || isAdmin());
-      allow list: if isSignedIn(); // A user can list events they might be part of
+      allow get: if isSignedIn() && request.auth.uid in resource.data.attendeeIds;
+      allow list: if isSignedIn() && request.query.where.attendeeIds.hasAny([request.auth.uid]);
       allow create: if isSignedIn() && request.resource.data.organizerId == request.auth.uid;
       allow update: if (isOwner(resource.data.organizerId) || isAdmin());
       allow delete: if (isOwner(resource.data.organizerId) || isAdmin());
