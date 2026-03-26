@@ -1,8 +1,11 @@
+// It's crucial to prefix environment variables with NEXT_PUBLIC_
+// to expose them to the browser in Next.js.
 export const firebaseConfig = {
-  "projectId": "studio-5795632085-cd9ad",
-  "appId": "1:116640254720:web:67a0e45c5cf1dc90f081e5",
-  "apiKey": "AIzaSyDNX-mal51ELV9Y_l4suFZobEQ8HtwHlAM",
-  "authDomain": "studio-5795632085-cd9ad.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "116640254720"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
