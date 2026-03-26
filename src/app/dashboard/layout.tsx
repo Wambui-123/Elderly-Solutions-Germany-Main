@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Settings, LogOut, Bot } from "lucide-react";
 import Link from "next/link";
-import { UserNav } from "@/components/dashboard/user-nav";
 
 export default function DashboardLayout({
   children,
@@ -36,15 +35,6 @@ export default function DashboardLayout({
             <MainNav />
           </SidebarContent>
           <SidebarFooter>
-             <SidebarHeader className="md:hidden">
-              <UserNav />
-            </SidebarHeader>
-            <Button asChild variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center">
-              <Link href="/dashboard/profile">
-                <Settings />
-                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-              </Link>
-            </Button>
              <Button asChild variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center">
               <Link href="/">
                 <LogOut />
@@ -55,7 +45,7 @@ export default function DashboardLayout({
         </Sidebar>
         <SidebarInset>
             <Header />
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <main className="flex-1 overflow-y-auto p-6">{children}</main>
             <Button asChild size="icon" className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-30">
                 <Link href="/dashboard/knowledge">
                     <Bot className="h-8 w-8" />

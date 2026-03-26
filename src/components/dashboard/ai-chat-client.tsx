@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
 
 import { caregiverAIHealthCompanion } from '@/ai/flows/caregiver-ai-health-companion';
-import { elderlyTaskClarification } from '@/ai/flows/elderly-task-clarification-ai';
+import { clarifyElderlyTask } from '@/ai/flows/elderly-task-clarification-ai';
 import { professionalPatientSummaryAI } from '@/ai/flows/professional-patient-summary-ai';
 
 import type { Role } from '@/lib/types';
@@ -38,7 +38,7 @@ const roleConfig = {
     elderly: {
         title: "Daily Assistant",
         placeholder: "Ask about your schedule or tasks...",
-        action: elderlyTaskClarification,
+        action: clarifyElderlyTask,
     },
     caregiver: {
         title: "Care Companion",

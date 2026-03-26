@@ -6,9 +6,9 @@ export default function KnowledgePage() {
     const currentUser = data.users[1]; // Mock: Caregiver
 
     return (
-        <div className="container mx-auto py-6">
+        <>
             <h1 className="font-headline text-3xl font-bold mb-6">AI Knowledge Hub</h1>
             <AIChatClient role={currentUser.role} userAvatar={currentUser.avatarUrl} />
-        </div>
+        </>
     );
 }

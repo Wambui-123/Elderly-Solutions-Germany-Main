@@ -12,7 +12,7 @@ export default function ProfilePage() {
     const user = data.users[1]; // Mock user
 
     return (
-        <div className="container mx-auto py-6">
+        <>
             <h1 className="font-headline text-3xl font-bold mb-6">Profile & Settings</h1>
             <div className="grid gap-6 md:grid-cols-3">
                 <div className="md:col-span-1">
@@ -90,6 +90,6 @@ export default function ProfilePage() {
                     </Card>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

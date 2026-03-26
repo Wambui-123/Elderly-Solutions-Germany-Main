@@ -25,7 +25,7 @@ export default function DashboardOverviewPage() {
     };
 
     return (
-        <div className="container mx-auto py-6">
+        <>
             <div className="mb-6">
                 <h1 className="font-headline text-3xl font-bold">
                     Welcome back, {user.name.split(' ')[0]}!
@@ -35,6 +35,6 @@ export default function DashboardOverviewPage() {
                 </p>
             </div>
             {renderDashboard()}
-        </div>
+        </>
     );
 }

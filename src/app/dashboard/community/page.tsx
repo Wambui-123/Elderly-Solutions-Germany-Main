@@ -11,7 +11,7 @@ export default function CommunityPage() {
     const selectedContact = contacts[1];
 
     return (
-        <div className="container mx-auto py-6">
+        <>
             <h1 className="font-headline text-3xl font-bold mb-6">Community Hub</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 h-[75vh]">
                 <Card className="md:col-span-1 lg:col-span-1 flex flex-col">
@@ -66,6 +66,6 @@ export default function CommunityPage() {
                     </div>
                 </Card>
             </div>
-        </div>
+        </>
     );
 }

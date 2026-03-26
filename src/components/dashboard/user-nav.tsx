@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { data } from "@/lib/data";
-import { CreditCard, LogOut, Settings, User } from "lucide-react";
+import { CreditCard, LogOut, Settings, User, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 export function UserNav() {
@@ -47,9 +47,17 @@ export function UserNav() {
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/appointments">
+              <CalendarDays className="mr-2 h-4 w-4" />
+              <span>Appointments</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/billing">
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Billing</span>
+            </Link>
           </DropdownMenuItem>
            <DropdownMenuItem asChild>
              <Link href="/dashboard/profile">
