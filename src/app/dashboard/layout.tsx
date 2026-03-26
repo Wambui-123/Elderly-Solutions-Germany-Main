@@ -21,6 +21,7 @@ import { useAuth } from "@/firebase";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AIChatClient } from "@/components/dashboard/ai-chat-client";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function DashboardLayout({
@@ -28,10 +29,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, firebaseUser } = useUser();
+  const { user, loading, firebaseUser, error } = useUser();
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     if(auth) {
@@ -41,20 +43,45 @@ export default function DashboardLayout({
   };
 
   useEffect(() => {
-    if (loading) return; 
+    if (loading) return;
 
+    // Not authenticated at all
     if (!firebaseUser) {
       router.replace('/login');
-    } else if (user) {
-      if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
-        router.replace('/onboarding');
-      } else if (user.hasCompletedOnboarding === true && pathname === '/onboarding') {
-        router.replace('/dashboard');
-      }
+      return;
     }
-  }, [loading, firebaseUser, user, pathname, router]);
 
-  if (loading || !user) {
+    // Authenticated, but user profile has issues
+    if (!user) {
+      // A specific error occurred fetching the profile (e.g., permissions)
+      if (error) {
+        console.error("Failed to load user profile, logging out:", error);
+        toast({
+          variant: "destructive",
+          title: "Session Error",
+          description: "Your session could not be verified. Please log in again.",
+        });
+        handleLogout();
+      } else {
+        // Auth is valid, but profile doc might not exist yet (e.g., during signup)
+        // Force to onboarding to complete profile creation.
+        if (pathname !== '/onboarding') {
+          router.replace('/onboarding');
+        }
+      }
+      return;
+    }
+
+    // User and profile are loaded successfully, handle onboarding status
+    if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
+      router.replace('/onboarding');
+    } else if (user.hasCompletedOnboarding === true && pathname === '/onboarding') {
+      router.replace('/dashboard');
+    }
+  }, [loading, firebaseUser, user, error, pathname, router]);
+
+  // While the initial user/profile load is happening, show a full-screen loader.
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -65,6 +92,19 @@ export default function DashboardLayout({
     );
   }
 
+  // After the initial load, if we still don't have a user object,
+  // it means a redirect is in progress. Show a loader to prevent
+  // the page from rendering with incomplete data.
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If the user is loaded but is on the wrong page regarding their onboarding status,
+  // show a loader while the redirect from the useEffect happens.
   if (user.hasCompletedOnboarding === false && pathname !== '/onboarding') {
       return (
           <div className="flex h-screen items-center justify-center">
