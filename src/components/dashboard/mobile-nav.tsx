@@ -2,38 +2,38 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MOBILE_NAV_LINKS } from "@/lib/constants";
+import { Home, HeartPulse, Users, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Icons } from "@/components/icons";
+
+const bottomNavItems = [
+    { label: 'Home', path: '/dashboard', icon: Home },
+    { label: 'Health', path: '/dashboard/health', icon: HeartPulse },
+    { label: 'Community', path: '/dashboard/community', icon: Users },
+    { label: 'Menu', path: '/dashboard/profile', icon: LayoutGrid },
+];
 
 export function MobileNav() {
   const pathname = usePathname();
+  
   return (
-    <div className="fixed bottom-0 z-10 w-full border-t bg-background/70 backdrop-blur-xl md:hidden">
-        <div className="container flex h-16 items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2">
-                <Icons.logo className="h-6 w-6 text-primary"/>
-                <span className="sr-only">Elderly Solutions</span>
-            </Link>
-            <nav className="flex items-center gap-1">
-                {MOBILE_NAV_LINKS.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center justify-center rounded-md p-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-                                isActive && "text-primary"
-                            )}
-                        >
-                            <item.icon className="h-5 w-5" />
-                            <span className="text-xs">{item.label}</span>
-                        </Link>
-                    );
-                })}
-            </nav>
-        </div>
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-stone-200 px-4 py-2 lg:hidden">
+      <div className="max-w-lg mx-auto flex items-center justify-between gap-1">
+        {bottomNavItems.map((item) => (
+          <Link
+            key={item.path}
+            href={item.path}
+            className={cn(
+              "flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all active:scale-90",
+              pathname === item.path 
+                ? "text-primary bg-stone-100" 
+                : "text-stone-400 hover:text-primary"
+            )}
+          >
+            <item.icon size={20} strokeWidth={pathname === item.path ? 2.5 : 2} />
+            <span className="text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

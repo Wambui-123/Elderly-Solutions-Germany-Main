@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
+import { MobileNav } from "@/components/dashboard/mobile-nav";
 
 
 export default function DashboardLayout({
@@ -83,20 +84,15 @@ export default function DashboardLayout({
           </Button>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-          <Header />
-          <main className="flex-1 overflow-y-auto py-6">
-            <div className="container">
-              {children}
-            </div>
-          </main>
-          <Button asChild size="icon" className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-30">
-              <Link href="/dashboard/knowledge">
-                  <Bot className="h-8 w-8" />
-                  <span className="sr-only">AI Knowledge Hub</span>
-              </Link>
-          </Button>
-      </SidebarInset>
+      <div className="flex flex-col w-full">
+        <Header />
+        <main className="flex-1 overflow-y-auto py-6">
+          <div className="container">
+            {children}
+          </div>
+        </main>
+      </div>
+      <MobileNav />
     </SidebarProvider>
   );
 }
