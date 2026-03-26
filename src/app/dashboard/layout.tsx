@@ -8,6 +8,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
@@ -82,44 +83,46 @@ export default function DashboardLayout({
 
 
   return (
-    <div className="flex min-h-screen w-full">
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <Icons.logo className="h-7 w-7 text-primary" />
-            <span className="font-headline text-lg font-bold group-data-[collapsible=icon]:hidden">
-              Elderly Solutions
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-        <SidebarFooter>
-           <Button onClick={handleLogout} variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center">
-              <LogOut />
-              <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <Sidebar collapsible="icon">
+          <SidebarHeader>
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+              <Icons.logo className="h-7 w-7 text-primary" />
+              <span className="font-headline text-lg font-bold group-data-[collapsible=icon]:hidden">
+                Elderly Solutions
+              </span>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <MainNav />
+          </SidebarContent>
+          <SidebarFooter>
+            <Button onClick={handleLogout} variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center">
+                <LogOut />
+                <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
+        <div className="flex flex-col w-full">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="container px-0">
+              {children}
+            </div>
+          </main>
+        </div>
+        <Link href="/dashboard/knowledge">
+          <Button
+            variant="default"
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 flex"
+            aria-label="Open AI Chat"
+          >
+            <Icons.logo className="h-7 w-7" />
           </Button>
-        </SidebarFooter>
-      </Sidebar>
-      <div className="flex flex-col w-full">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="container px-0">
-            {children}
-          </div>
-        </main>
+        </Link>
       </div>
-       <Link href="/dashboard/knowledge">
-        <Button
-          variant="default"
-          size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 flex"
-          aria-label="Open AI Chat"
-        >
-          <Icons.logo className="h-7 w-7" />
-        </Button>
-      </Link>
-    </div>
+    </SidebarProvider>
   );
 }
