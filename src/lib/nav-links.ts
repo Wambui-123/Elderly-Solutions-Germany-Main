@@ -1,6 +1,6 @@
 import {
   LayoutDashboard,
-  HeartCircuit,
+  HeartPulse,
   MessageSquareQuote,
   WandSparkles,
   CircleUserRound,
@@ -13,7 +13,7 @@ import {
 
 export const ELDERLY_NAV_LINKS = [
   { href: '/dashboard/elderly', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard/elderly/health', label: 'Health', icon: HeartCircuit },
+  { href: '/dashboard/elderly/health', label: 'Health', icon: HeartPulse },
   { href: '/dashboard/elderly/appointments', label: 'Appointments', icon: CalendarClock },
   { href: '/dashboard/elderly/community', label: 'Community', icon: UsersRound },
   { href: '/dashboard/knowledge', label: 'Knowledge Hub', icon: WandSparkles },
