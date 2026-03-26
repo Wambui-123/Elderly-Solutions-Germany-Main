@@ -29,3 +29,26 @@ export async function login(prevState: { message: string }, formData: FormData) 
 
   return { message: 'Invalid email or password.' };
 }
+
+const signupSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.enum(["elderly", "caregiver", "professional"]),
+});
+
+export async function signup(prevState: { message: string }, formData: FormData) {
+  const parsed = signupSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!parsed.success) {
+    console.log(parsed.error.errors);
+    return { message: 'Invalid form data.' };
+  }
+
+  // Mock user creation logic
+  console.log('New user signed up:', parsed.data);
+  
+  // In a real app, you would create the user in the database here.
+  
+  redirect('/dashboard');
+}

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { data } from "@/lib/data";
 import { CreditCard, LogOut, Settings, User } from "lucide-react";
+import Link from "next/link";
 
 export function UserNav() {
   const user = data.users[1]; // Mock user - Caregiver
@@ -40,23 +41,29 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/profile">
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+           <DropdownMenuItem asChild>
+             <Link href="/dashboard/profile">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+        <DropdownMenuItem asChild>
+          <Link href="/">
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useFormState } from "react-dom";
-import Link from 'next/link';
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,29 +17,40 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { login } from "@/lib/actions";
+import { signup } from "@/lib/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const loginSchema = z.object({
+const signupSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  role: z.enum(["elderly", "caregiver", "professional"]),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 const initialState = {
   message: "",
 };
 
-export function LoginForm() {
-  const [state, formAction] = useFormState(login, initialState);
+export function RegisterForm() {
+  const [state, formAction] = useFormState(signup, initialState);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
+      role: "caregiver",
     },
   });
 
@@ -53,6 +64,19 @@ export function LoginForm() {
             <AlertDescription>{state.message}</AlertDescription>
           </Alert>
         )}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="email"
@@ -79,8 +103,30 @@ export function LoginForm() {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>I am a...</FormLabel>
+               <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="caregiver">Caregiver</SelectItem>
+                  <SelectItem value="elderly">Elderly Person</SelectItem>
+                  <SelectItem value="professional">Medical Professional</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit" className="w-full">
-          Sign In
+          Create Account
         </Button>
         <div className="relative">
           <Separator className="my-6" />
@@ -89,21 +135,17 @@ export function LoginForm() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              Or
             </span>
           </div>
         </div>
-        <Button variant="outline" className="w-full" type="button">
-           <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v2.16h5.84c-.24 1.56-2.06 5.48-5.84 5.48-3.52 0-6.38-2.9-6.38-6.38s2.86-6.38 6.38-6.38c2.02 0 3.34 1.06 3.92 1.62l1.68-1.62C16.48 2.96 14.74 2 12.48 2c-5.52 0-10 4.48-10 10s4.48 10 10 10c5.78 0 9.5-4.06 9.5-9.72 0-.6-.06-1.18-.16-1.74z"></path></svg>
-          Google
-        </Button>
-         <p className="px-8 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+        <p className="px-8 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
             <Link
-              href="/signup"
+              href="/login"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign Up
+              Sign In
             </Link>
           </p>
       </form>
