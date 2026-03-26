@@ -32,7 +32,7 @@ export function VitalsOverview() {
   const vitalsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, 'users', user.id, 'vitalsEntries'),
+      collection(firestore, 'user_profiles', user.id, 'vitalsEntries'),
       orderBy('timestamp', 'desc'),
       limit(30) // Fetch the last 30 entries to ensure we have enough data
     );

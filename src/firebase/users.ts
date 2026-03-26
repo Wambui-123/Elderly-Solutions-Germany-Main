@@ -17,7 +17,7 @@ interface UserProfileData {
 
 // This function now safely creates a profile only if one doesn't already exist.
 export async function createUserProfile(user: FirebaseAuthUser, data: UserProfileData) {
-    const userDocRef = doc(firestore, 'users', user.uid);
+    const userDocRef = doc(firestore, 'user_profiles', user.uid);
 
     // Check if the document already exists to avoid overwriting on subsequent logins.
     const docSnap = await getDoc(userDocRef);
@@ -45,7 +45,7 @@ export async function createUserProfile(user: FirebaseAuthUser, data: UserProfil
 }
 
 export async function getUserProfile(uid: string): Promise<User | null> {
-    const userDocRef = doc(firestore, 'users', uid);
+    const userDocRef = doc(firestore, 'user_profiles', uid);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
         return docSnap.data() as User;
@@ -55,7 +55,7 @@ export async function getUserProfile(uid: string): Promise<User | null> {
 }
 
 export function updateUserProfile(uid: string, data: Partial<User>) {
-    const userDocRef = doc(firestore, 'users', uid);
+    const userDocRef = doc(firestore, 'user_profiles', uid);
     const dataToUpdate = {
         ...data,
         updatedAt: serverTimestamp()
@@ -79,7 +79,7 @@ export function updateUserProfile(uid: string, data: Partial<User>) {
 
 export async function findUserByEmail(email: string): Promise<User | null> {
     if (!email) return null;
-    const usersRef = collection(firestore, 'users');
+    const usersRef = collection(firestore, 'user_profiles');
     // Only allow searching for elderly users for privacy and security
     const q = query(usersRef, where('email', '==', email), where('role', '==', 'elderly'));
     
@@ -94,8 +94,8 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 export async function linkUserToPatient(args: { caregiverOrProId: string; patientId: string; role: 'caregiver' | 'professional' }) {
     const { caregiverOrProId, patientId, role } = args;
 
-    const patientDocRef = doc(firestore, 'users', patientId);
-    const caregiverOrProDocRef = doc(firestore, 'users', caregiverOrProId);
+    const patientDocRef = doc(firestore, 'user_profiles', patientId);
+    const caregiverOrProDocRef = doc(firestore, 'user_profiles', caregiverOrProId);
 
     // Step 1: Update patient document
     const patientDocSnap = await getDoc(patientDocRef);

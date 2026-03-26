@@ -28,13 +28,13 @@ export function MedicationSchedule() {
 
   const medicationsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, 'users', user.id, 'medications');
+    return collection(firestore, 'user_profiles', user.id, 'medications');
   }, [firestore, user]);
 
   const adherenceQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, 'users', user.id, 'medicationAdherence'),
+      collection(firestore, 'user_profiles', user.id, 'medicationAdherence'),
       where('scheduledTime', '>=', startOfDayTimestamp),
       where('scheduledTime', '<=', endOfDayTimestamp)
     );
@@ -49,7 +49,7 @@ export function MedicationSchedule() {
     // This is a simplified approach. A real app would have more complex logic
     // to find or create the correct adherence record for a specific scheduled time.
     // For this demo, we'll create a new one with the current time.
-    const newAdherenceRef = doc(collection(firestore, 'users', user.id, 'medicationAdherence'));
+    const newAdherenceRef = doc(collection(firestore, 'user_profiles', user.id, 'medicationAdherence'));
     
     const adherenceRecord: Omit<MedicationAdherence, 'id'> = {
         medicationId: medication.id,

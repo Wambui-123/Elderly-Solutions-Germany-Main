@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 function PatientCard({ patientId }: { patientId: string }) {
     const firestore = useFirestore();
-    const patientDocRef = useMemoFirebase(() => doc(firestore, 'users', patientId), [firestore, patientId]);
+    const patientDocRef = useMemoFirebase(() => doc(firestore, 'user_profiles', patientId), [firestore, patientId]);
     const { data: patient, isLoading } = useDoc<User>(patientDocRef);
 
     if (isLoading) {

@@ -25,6 +25,14 @@ export interface FirebaseContextState {
   userError: Error | null;
 }
 
+export interface FirebaseProviderProps {
+    children: ReactNode;
+    firebaseApp: FirebaseApp;
+    firestore: Firestore;
+    auth: Auth;
+}
+
+
 export interface FirebaseServicesAndUser {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
@@ -68,17 +76,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       (firebaseUser) => {
         if (firebaseUser) {
           setUserAuthState((prevState) => ({ ...prevState, firebaseUser, isUserLoading: true }));
-          const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+          const userDocRef = doc(firestore, 'user_profiles', firebaseUser.uid);
           
           const unsubDoc = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
               const userData = docSnap.data() as AppUser;
               setUserAuthState({ user: userData, firebaseUser, isUserLoading: false, userError: null });
             } else {
+              // This can happen briefly during signup before the user profile is created.
+              // We don't treat it as an error, but the user object will be null until the doc is created.
               setUserAuthState({ user: null, firebaseUser, isUserLoading: false, userError: null });
             }
           }, (error) => {
-            console.error("FirebaseProvider: onSnapshot error:", error);
+            console.error("Error fetching user document:", error);
             setUserAuthState({ user: null, firebaseUser, isUserLoading: false, userError: error });
           });
           

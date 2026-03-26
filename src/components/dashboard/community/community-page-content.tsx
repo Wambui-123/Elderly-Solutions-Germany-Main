@@ -24,7 +24,7 @@ function ConversationListItem({ conversation, isSelected, onSelect, currentUserI
 
     const otherUserDocRef = useMemoFirebase(() => {
         if (!otherParticipantId) return null;
-        return doc(firestore, 'users', otherParticipantId);
+        return doc(firestore, 'user_profiles', otherParticipantId);
     }, [firestore, otherParticipantId]);
 
     const { data: otherUserData, isLoading } = useDoc<User>(otherUserDocRef);
@@ -85,7 +85,7 @@ function ChatWindow({ conversationId, currentUser }: { conversationId: string, c
 
     const otherUserDocRef = useMemoFirebase(() => {
         if (!otherParticipantId) return null;
-        return doc(firestore, 'users', otherParticipantId);
+        return doc(firestore, 'user_profiles', otherParticipantId);
     }, [firestore, otherParticipantId]);
 
     const { data: otherUserData, isLoading: otherUserLoading } = useDoc<User>(otherUserDocRef);
