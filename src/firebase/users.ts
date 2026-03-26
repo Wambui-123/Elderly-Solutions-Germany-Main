@@ -13,8 +13,19 @@ interface UserProfileData {
     role: Role;
 }
 
+// This function now safely creates a profile only if one doesn't already exist.
 export async function createUserProfile(user: FirebaseAuthUser, data: UserProfileData) {
     const userDocRef = doc(firestore, 'users', user.uid);
+
+    // Check if the document already exists to avoid overwriting on subsequent logins.
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+        // If the document exists, we can just return its data.
+        // No need to write anything.
+        return docSnap.data();
+    }
+
+    // If the document doesn't exist, create it.
     const userProfile = {
         uid: user.uid,
         name: data.name,

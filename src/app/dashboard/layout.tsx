@@ -42,26 +42,30 @@ export default function DashboardLayout({
     }
   }, [loading, firebaseUser, router]);
 
-  // While loading, or if there's no user (and redirect is imminent), show a spinner.
-  if (loading || !firebaseUser) {
+  // While loading auth state or user profile, show a spinner.
+  // This combines the initial auth check and the profile fetch into one loading state.
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
-  
-  // If user data is still loading but firebase user exists
+
+  // If loading is done but we still don't have a user (even with a firebaseUser),
+  // it means they're not in the DB or there's an issue. Redirecting is safest.
   if (!user) {
+    // A useEffect will handle the redirect, so we can just show a loader here.
     return (
-       <div className="flex h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <p className="text-muted-foreground">Setting up your profile...</p>
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
-      </div>
-    )
+    );
   }
+
 
   return (
     <div className="flex min-h-screen w-full">
