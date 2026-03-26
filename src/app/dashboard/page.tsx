@@ -1,13 +1,13 @@
 import { CaregiverDashboard } from "@/components/dashboard/overview/caregiver-dashboard";
 import { ElderlyDashboard } from "@/components/dashboard/overview/elderly-dashboard";
 import { ProfessionalDashboard } from "@/components/dashboard/overview/professional-dashboard";
+import { AdminDashboard } from "@/components/dashboard/overview/admin-dashboard";
 import { data } from "@/lib/data";
 
 export default function DashboardOverviewPage() {
     // In a real app, user data would come from an auth context or session.
-    // Here we'll just cycle through them for demonstration purposes.
-    // We will use the Caregiver user by default for a consistent experience.
-    const user = data.users[1];
+    // We will cycle to the admin user to show the new dashboard.
+    const user = data.users[4];
 
     const renderDashboard = () => {
         switch (user.role) {
@@ -17,6 +17,8 @@ export default function DashboardOverviewPage() {
                 return <CaregiverDashboard user={user} patients={data.patients} />;
             case 'professional':
                 return <ProfessionalDashboard user={user} patients={data.patients} />;
+            case 'admin':
+                return <AdminDashboard user={user} />;
             default:
                 return <div>Welcome! Your dashboard is being set up.</div>;
         }

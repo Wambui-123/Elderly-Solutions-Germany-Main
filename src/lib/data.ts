@@ -29,6 +29,13 @@ const users: User[] = [
         avatarUrl: 'https://picsum.photos/seed/104/100/100',
         role: 'caregiver'
     },
+    {
+        id: '5',
+        name: 'Admina Strator',
+        email: 'admin@example.com',
+        avatarUrl: 'https://picsum.photos/seed/admin/100/100',
+        role: 'admin'
+    }
 ];
 
 const patients: Patient[] = [

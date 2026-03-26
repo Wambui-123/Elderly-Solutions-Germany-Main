@@ -27,31 +27,29 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="container grid lg:grid-cols-2 gap-12 items-center py-12 md:py-24">
-          <div className="flex flex-col gap-4">
+        <section className="relative h-[60vh] flex items-center justify-center text-center text-white">
+          <Image
+            src="https://picsum.photos/seed/landing/1200/800"
+            alt="Caregiver assisting an elderly person"
+            fill
+            className="object-cover -z-10 brightness-50"
+            data-ai-hint="caregiver elderly person"
+          />
+          <div className="container flex flex-col gap-4 items-center">
             <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold">
               Compassionate Care, Connected.
             </h1>
-            <p className="text-lg text-muted-foreground max-w-lg">
+            <p className="text-lg text-white/90 max-w-2xl">
               Our platform provides seamless health monitoring, community engagement, and AI-powered assistance to empower caregivers and enhance the well-being of the elderly.
             </p>
             <div className="flex gap-4 mt-4">
               <Button size="lg" asChild>
                 <Link href="/signup">Join for Free</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary" asChild>
                 <Link href="#features">Learn More</Link>
               </Button>
             </div>
-          </div>
-          <div className="relative h-80 lg:h-[400px] w-full">
-            <Image
-              src="https://picsum.photos/seed/landing/1200/800"
-              alt="Caregiver assisting an elderly person"
-              fill
-              className="rounded-lg object-cover"
-              data-ai-hint="caregiver elderly person"
-            />
           </div>
         </section>
 
