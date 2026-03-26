@@ -344,12 +344,19 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
   return (
     <Card className="flex h-full flex-col">
       <CardHeader className="flex flex-row items-center justify-between">
-        <ShadcnDialogTitle asChild>
+        {isPopup ? (
+          <ShadcnDialogTitle asChild>
             <CardTitle className="flex items-center gap-2">
-                <Bot />
-                {isPopup ? 'AI Assistant' : config.title}
+              <Bot />
+              AI Assistant
             </CardTitle>
-        </ShadcnDialogTitle>
+          </ShadcnDialogTitle>
+        ) : (
+          <CardTitle className="flex items-center gap-2">
+            <Bot />
+            {config.title}
+          </CardTitle>
+        )}
          <Popover>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -457,7 +464,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
         <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSendMessage)} className="flex w-full items-start gap-2">
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-                 <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                 <Button type="button" variant="ghost" size="icon" onClick={() => fileInput-ref.current?.click()}>
                     <Paperclip className="h-5 w-5" />
                 </Button>
                 <Button type="button" variant={isListening ? "destructive" : "ghost"} size="icon" onClick={handleListen}>
