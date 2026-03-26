@@ -101,7 +101,9 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false; // Disallow listing all users for privacy.
+      // Allow signed-in users to perform queries (e.g., searching for patients by email).
+      // Client-side queries MUST be securely constructed to prevent over-fetching.
+      allow list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId) || isAdmin();
