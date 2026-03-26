@@ -246,7 +246,8 @@ service cloud.firestore {
      * @principle Implements a public-read, owner-only write model.
      */
     match /events/{eventId} {
-      allow get, list: if true;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && request.query.where('attendeeIds', 'array-contains', request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
       allow update: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
       allow delete: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
@@ -268,3 +269,5 @@ service cloud.firestore {
 
   }
 }
+
+    
