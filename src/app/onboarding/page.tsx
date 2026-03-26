@@ -131,6 +131,14 @@ export default function OnboardingPage() {
     // State for caregiver/pro flow
     const [linkedPatient, setLinkedPatient] = useState<User | null>(null);
 
+    useEffect(() => {
+        // If user is loaded and already has completed onboarding, redirect them.
+        if (user && user.hasCompletedOnboarding) {
+            router.replace('/dashboard');
+        }
+    }, [user, router]);
+    
+
     // Define steps based on role
     let steps: { title: string; description: string; icon: React.ReactNode; content: React.ReactNode }[] = [];
 
@@ -153,9 +161,8 @@ export default function OnboardingPage() {
         );
     }
     
-    // If onboarding is somehow already complete, redirect away.
+    // Render a loading state while the useEffect for redirection is running
     if (user.hasCompletedOnboarding) {
-        router.replace('/dashboard');
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
     }
 

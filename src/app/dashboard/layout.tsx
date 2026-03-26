@@ -114,13 +114,12 @@ export default function DashboardLayout({
         <Button
           variant="default"
           size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hidden lg:flex"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 flex"
           aria-label="Open AI Chat"
         >
           <Icons.logo className="h-7 w-7" />
         </Button>
       </Link>
-      <MobileNav />
     </div>
   );
 }
