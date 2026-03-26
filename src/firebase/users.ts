@@ -33,7 +33,7 @@ export async function createUserProfile(user: FirebaseAuthUser, data: UserProfil
         name: data.name,
         email: data.email!,
         role: data.role,
-        avatarUrl: user.photoURL || `https://avatar.vercel.sh/${user.uid}.png`, // Default avatar
+        avatarUrl: user.photoURL || "", // Use Google photo or empty string
         createdAt: serverTimestamp() as Timestamp,
         hasCompletedOnboarding: false, // Set onboarding to false for new users
         caregiverIds: [],

@@ -46,7 +46,7 @@ function PatientTableRow({ patientId }: { patientId: string }) {
             <TableCell>
                 <div className="flex items-center gap-3">
                 <Avatar className="hidden h-9 w-9 sm:flex">
-                    <AvatarImage src={patient.avatarUrl} alt="Avatar" data-ai-hint="person portrait" />
+                    <AvatarImage src={patient.avatarUrl} alt={patient.name} />
                     <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="font-medium">{patient.name}</div>

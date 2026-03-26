@@ -33,7 +33,7 @@ function PatientCard({ patientId }: { patientId: string }) {
     return (
         <Card className="flex items-center gap-4 p-4">
              <Avatar className="h-12 w-12">
-                <AvatarImage src={patient.avatarUrl} alt={`Photo of ${patient.name}`} data-ai-hint="smiling senior" />
+                <AvatarImage src={patient.avatarUrl} alt={`Photo of ${patient.name}`} />
                 <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">

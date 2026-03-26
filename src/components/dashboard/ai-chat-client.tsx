@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { DialogTitle as ShadcnDialogTitle } from '../ui/dialog';
 
 type Message = {
   id: string;
@@ -329,13 +330,15 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
   return (
     <Card className="flex h-full flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            <Bot />
-            {isPopup ? 'AI Assistant' : config.title}
-        </CardTitle>
+        <ShadcnDialogTitle asChild>
+            <CardTitle className="flex items-center gap-2">
+                <Bot />
+                {isPopup ? 'AI Assistant' : config.title}
+            </CardTitle>
+        </ShadcnDialogTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">
-        <ScrollArea className="h-full" pr-4>
+        <ScrollArea className="h-full pr-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
