@@ -1,9 +1,11 @@
 "use client";
 
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { firestore } from '.'; // Using the initialized instance
+import { initializeFirebase } from '.'; // Using the initialized instance
 import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { Role } from '@/lib/types';
+
+const { firestore } = initializeFirebase();
 
 interface UserProfileData {
     name: string;
