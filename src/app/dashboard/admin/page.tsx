@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminDashboard } from "@/components/dashboard/overview/admin-dashboard";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from "@/firebase";
 
 export default function AdminDashboardPage() {
@@ -20,7 +20,17 @@ export default function AdminDashboardPage() {
                     Here's your admin overview for today.
                 </p>
             </div>
-            <AdminDashboard user={user} />
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Admin Dashboard</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>Welcome, {user.name}. Here you can manage users, settings, and monitor the platform.</p>
+                        {/* More admin-specific components would go here */}
+                    </CardContent>
+                </Card>
+            </div>
         </>
     );
 }

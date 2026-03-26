@@ -8,11 +8,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarInset,
-  SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Settings, LogOut, Bot, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@/firebase";
@@ -64,7 +62,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
+    <div className="flex min-h-screen w-full">
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
@@ -86,13 +84,23 @@ export default function DashboardLayout({
       </Sidebar>
       <div className="flex flex-col w-full">
         <Header />
-        <main className="flex-1 overflow-y-auto py-6">
-          <div className="container">
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="container px-0">
             {children}
           </div>
         </main>
       </div>
       <MobileNav />
-    </SidebarProvider>
+       <Link href="/dashboard/knowledge">
+        <Button
+          variant="default"
+          size="icon"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+        >
+          <Icons.logo className="h-7 w-7" />
+          <span className="sr-only">Open AI Chat</span>
+        </Button>
+      </Link>
+    </div>
   );
 }
