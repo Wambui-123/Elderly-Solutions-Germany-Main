@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { SendHorizonal, Bot, User, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff, Volume2 } from 'lucide-react';
+import { SendHorizonal, Bot, User, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff, Volume2, Phone } from 'lucide-react';
 import Image from 'next/image';
 
 import { caregiverAIHealthCompanion } from '@/ai/flows/caregiver-ai-health-companion';
@@ -22,6 +23,17 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Separator } from '../ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type Message = {
   id: string;
@@ -70,15 +82,18 @@ const suggestedPrompts: Record<Role, { title: string; prompt: string; }[]> = {
     { title: "My schedule?", prompt: "What is on my schedule for today?" },
     { title: "Medication time?", prompt: "When do I take my next medication?" },
     { title: "Explain my task", prompt: "Can you explain my first task for today?" },
+    { title: "Fun fact?", prompt: "Tell me a fun fact." },
   ],
   caregiver: [
     { title: "Fall prevention", prompt: "What are some tips for fall prevention?" },
     { title: "Medication reminder", prompt: "How can I best remind my loved one to take their medication?" },
     { title: "Signs of dehydration", prompt: "What are the common signs of dehydration in the elderly?" },
+    { title: "Handle sundowning", prompt: "What are some strategies to handle sundowning in dementia patients?" },
   ],
   professional: [
     { title: "Summarize vitals", prompt: "Summarize the patient's vitals for the last 24 hours." },
     { title: "Identify risks", prompt: "Based on the recent logs, are there any immediate risks I should be aware of?" },
+    { title: "Drug interaction", prompt: "Check for drug interactions between Warfarin and Ibuprofen." },
   ],
   admin: [
     { title: "System status", prompt: "What is the current system status?" },
@@ -261,13 +276,37 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Potential Emergency Detected</AlertTitle>
-                    <AlertDescription className="space-y-4">
+                    <AlertDescription className="space-y-2">
                         <p>{result.advice}</p>
-                        <Button asChild>
-                            <a href="tel:112">
-                                Call Emergency Services (112)
-                            </a>
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="secondary" className="w-full">
+                                    <Phone className="mr-2 h-4 w-4" />
+                                    Show Emergency Numbers
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Emergency Contact</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Select a number to call immediately.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+                                     <AlertDialogAction asChild className="w-full">
+                                        <a href="tel:112">
+                                            Call General Emergency - 112
+                                        </a>
+                                    </AlertDialogAction>
+                                     <AlertDialogAction asChild className="w-full">
+                                        <a href="tel:110">
+                                            Call Police - 110
+                                        </a>
+                                    </AlertDialogAction>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </AlertDescription>
                 </Alert>
              )
@@ -296,7 +335,7 @@ export function AIChatClient({ role, userAvatar, isPopup = false }: AIChatClient
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">
-        <ScrollArea className={isPopup ? "h-[50vh]" : "h-[60vh]"} pr-4>
+        <ScrollArea className="h-full" pr-4>
           <div className="space-y-4">
             {messages.map((message) => (
               <div

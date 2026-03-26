@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -84,42 +85,45 @@ export default function ProfilePage() {
     return (
         <>
             <h1 className="font-headline text-3xl font-bold mb-6">Profile & Settings</h1>
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="md:col-span-1">
-                    <Card>
-                        <CardContent className="pt-6 flex flex-col items-center">
-                            <Avatar className="h-24 w-24 mb-4">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback className="text-3xl">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-xl font-bold">{user.name}</h2>
-                            <p className="text-muted-foreground">{user.email}</p>
-                            <Button variant="outline" className="mt-4">Change Photo</Button>
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="md:col-span-2">
+            <div className="max-w-4xl mx-auto w-full grid gap-6">
+                <div>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Personal Information</CardTitle>
-                                    <CardDescription>Update your personal details here.</CardDescription>
+                                    <CardDescription>Update your personal details and photo here.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <Label>Full Name</Label>
-                                                <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                     <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Avatar className="h-24 w-24">
+                                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                                <AvatarFallback className="text-3xl">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                                            </Avatar>
+                                            <Button variant="outline" size="sm">Change Photo</Button>
+                                        </div>
+                                        <div className="w-full space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="name"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <Label>Full Name</Label>
+                                                        <FormControl>
+                                                            <Input {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <div className="space-y-2">
+                                                <Label htmlFor="email">Email Address</Label>
+                                                <Input id="email" type="email" defaultValue={user.email} readOnly disabled />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Separator />
                                     <FormField
                                         control={form.control}
                                         name="contactNumber"
@@ -133,10 +137,6 @@ export default function ProfilePage() {
                                             </FormItem>
                                         )}
                                     />
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email Address</Label>
-                                        <Input id="email" type="email" defaultValue={user.email} readOnly disabled />
-                                    </div>
                                     <Button type="submit" disabled={isSaving}>
                                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Save Changes
