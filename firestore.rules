@@ -100,11 +100,27 @@ service cloud.firestore {
      * @principle Enforces Self-Creation and Ownership. A user has full control over their own document.
      */
     match /users/{userId} {
-      // Allow signed-in users to read profiles (for searching/linking) and list them.
-      allow get, list: if isSignedIn();
+      // Allow signed-in users to read profiles (for searching/linking).
+      allow get: if isSignedIn();
+      // Allow listing only with a query that filters by role, e.g., for caregivers searching for patients.
+      allow list: if isSignedIn() && (request.query.keys().hasAny(['email', 'role']));
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      // Allow users to update their own profile, or an admin to update any profile.
-      allow update: if isOwner(userId) || isAdmin();
+      // Allow users to update their own profile, an admin to update any profile, or a caregiver/pro to link to a patient.
+      allow update: if isOwner(userId) || isAdmin() || 
+          (
+            resource.data.role == 'elderly' &&
+            (
+                (
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'caregiver' &&
+                    request.resource.data.keys().hasOnly(['caregiverIds', 'updatedAt'])
+                ) ||
+                (
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'professional' &&
+                    request.resource.data.keys().hasOnly(['professionalIds', 'updatedAt'])
+                )
+            )
+          );
+
       allow delete: if isOwner(userId) || isAdmin();
 
       /**
@@ -274,12 +290,8 @@ service cloud.firestore {
      * @principle Differentiates access levels for organizers vs. attendees.
      */
     match /events/{eventId} {
-      // A user can read an event document if they are an attendee or the organizer.
-      // This applies to both `get` and `list` operations. Queries on this collection
-      // MUST include a `where` clause that filters by `attendeeIds` or `organizerId`
-      // to ensure the query only returns documents the user is allowed to see.
-      allow read: if isSignedIn() && (request.auth.uid in resource.data.attendeeIds || isOwner(resource.data.organizerId));
-      
+      allow get: if isSignedIn() && (request.auth.uid in resource.data.attendeeIds || isOwner(resource.data.organizerId));
+      allow list: if isSignedIn() && request.query.where.field == "attendeeIds" && request.query.where.op == "array-contains" && request.query.where.value == request.auth.uid;
       allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
       allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
       allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());

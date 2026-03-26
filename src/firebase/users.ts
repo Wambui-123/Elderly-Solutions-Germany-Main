@@ -97,14 +97,24 @@ export async function linkUserToPatient(args: { caregiverOrProId: string; patien
     const patientDocRef = doc(firestore, 'users', patientId);
     const caregiverOrProDocRef = doc(firestore, 'users', caregiverOrProId);
 
-    // Add the caregiver/pro to the patient's list
-    const patientUpdate = role === 'caregiver' 
-        ? { caregiverIds: arrayUnion(caregiverOrProId) }
-        : { professionalIds: arrayUnion(caregiverOrProId) };
-    
-    await updateDoc(patientDocRef, patientUpdate);
+    // Step 1: Update patient document
+    const patientDocSnap = await getDoc(patientDocRef);
+    if (!patientDocSnap.exists()) {
+        throw new Error("Patient document not found.");
+    }
+    const patientData = patientDocSnap.data() as User;
 
-    // Add the patient to the caregiver/pro's managed list
-    const caregiverUpdate = { managedPatientIds: arrayUnion(patientId) };
-    await updateDoc(caregiverOrProDocRef, caregiverUpdate);
+    if (role === 'caregiver') {
+        const updatedCaregiverIds = Array.from(new Set([...(patientData.caregiverIds || []), caregiverOrProId]));
+        await updateDoc(patientDocRef, { caregiverIds: updatedCaregiverIds, updatedAt: serverTimestamp() });
+    } else { // 'professional'
+        const updatedProfessionalIds = Array.from(new Set([...(patientData.professionalIds || []), caregiverOrProId]));
+        await updateDoc(patientDocRef, { professionalIds: updatedProfessionalIds, updatedAt: serverTimestamp() });
+    }
+
+    // Step 2: Update caregiver/professional document
+    await updateDoc(caregiverOrProDocRef, { 
+        managedPatientIds: arrayUnion(patientId),
+        updatedAt: serverTimestamp() 
+    });
 }
