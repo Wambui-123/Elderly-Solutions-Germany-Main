@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,10 +8,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { data } from "@/lib/data";
+import { useUser } from "@/firebase";
+import { Loader2 } from "lucide-react";
+
 
 export default function ProfilePage() {
-    const user = data.users[1]; // Mock user
+    const { user, loading } = useUser();
+
+    if (loading) {
+        return (
+             <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!user) {
+        return <p>User not found. Please log in again.</p>
+    }
 
     return (
         <>
@@ -20,7 +36,7 @@ export default function ProfilePage() {
                         <CardContent className="pt-6 flex flex-col items-center">
                             <Avatar className="h-24 w-24 mb-4">
                                 <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback className="text-3xl">{user.name.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="text-3xl">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
                             </Avatar>
                             <h2 className="text-xl font-bold">{user.name}</h2>
                             <p className="text-muted-foreground">{user.email}</p>
@@ -41,7 +57,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" defaultValue={user.email} />
+                                <Input id="email" type="email" defaultValue={user.email} readOnly />
                             </div>
                              <Button>Save Changes</Button>
                         </CardContent>

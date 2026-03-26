@@ -3,8 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useActionState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { signup } from "@/lib/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Loader2, Terminal } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/firebase";
+import { createUserProfile } from "@/firebase/users";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -37,12 +40,11 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-const initialState = {
-  message: "",
-};
-
 export function RegisterForm() {
-  const [state, formAction] = useActionState(signup, initialState);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const auth = useAuth();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -54,14 +56,30 @@ export function RegisterForm() {
     },
   });
 
+  const onSubmit = async (data: SignupFormValues) => {
+    setLoading(true);
+    setError(null);
+    if (!auth) return;
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await createUserProfile(userCredential.user, data);
+      router.push('/dashboard');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form action={formAction} className="space-y-4">
-        {state?.message && (
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
           <Alert variant="destructive">
             <Terminal className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{state.message}</AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         <FormField
@@ -109,7 +127,7 @@ export function RegisterForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>I am a...</FormLabel>
-               <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
@@ -125,7 +143,8 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Account
         </Button>
         <div className="relative">

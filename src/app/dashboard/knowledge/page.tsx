@@ -1,14 +1,30 @@
+"use client";
+
 import { AIChatClient } from "@/components/dashboard/ai-chat-client";
-import { data } from "@/lib/data";
+import { useUser } from "@/firebase";
+import { Loader2 } from "lucide-react";
 
 export default function KnowledgePage() {
-    // In a real app, you would get the current user's role and avatar from a session or context.
-    const currentUser = data.users[1]; // Mock: Caregiver
+    const { user, loading } = useUser();
+
+    if (loading) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        // Should be handled by layout, but as a fallback
+        return <p>Please log in to access the AI Knowledge Hub.</p>;
+    }
+
 
     return (
         <>
             <h1 className="font-headline text-3xl font-bold mb-6">AI Knowledge Hub</h1>
-            <AIChatClient role={currentUser.role} userAvatar={currentUser.avatarUrl} />
+            <AIChatClient role={user.role} userAvatar={user.avatarUrl} />
         </>
     );
 }

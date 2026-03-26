@@ -1,3 +1,6 @@
+"use client";
+
+import { signOut } from 'firebase/auth';
 import {
   Avatar,
   AvatarFallback,
@@ -13,12 +16,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { data } from "@/lib/data";
-import { CreditCard, LogOut, Settings, User, CalendarDays } from "lucide-react";
+import { CreditCard, LogOut, Settings, User, CalendarDays, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useUser, useAuth } from "@/firebase";
+import { useRouter } from "next/navigation";
+
 
 export function UserNav() {
-  const user = data.users[1]; // Mock user - Caregiver
+  const { user, loading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    if(auth) {
+      await signOut(auth);
+    }
+    router.push('/login');
+  };
+
+  if (loading) {
+    return <Loader2 className="h-6 w-6 animate-spin" />
+  }
+
+  if (!user) {
+    return (
+       <Button variant="ghost" asChild>
+          <Link href="/login">Login</Link>
+        </Button>
+    )
+  }
 
   return (
     <DropdownMenu>
@@ -26,7 +52,7 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="woman doctor" />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -67,11 +93,9 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">
+        <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
-          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

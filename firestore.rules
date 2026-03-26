@@ -1,0 +1,314 @@
+/**
+ * Core Philosophy: This ruleset enforces a multi-layered security model based on user roles (Patient, Caregiver, Professional),
+ * strict data ownership, and collaborative access. The central principle is "Authorization Independence," achieved by
+ * denormalizing authorization data (e.g., lists of authorized user IDs) directly onto the documents being secured. This
+ * approach avoids slow, costly, and sometimes impossible `get()` calls in security rules, leading to more performant and secure
+ * access control.
+ *
+ * Data Structure: The data is organized into two main categories:
+ * 1. User-Scoped Data: All personal and private information is nested under `/users/{userId}`. This includes the user's
+ *    profile, settings, private AI chat logs, and importantly, all patient-specific health data like records, vitals,
+ *    and medications, which are nested under the patient's user document.
+ * 2. Top-Level Collections: Shared or collaborative data such as `/conversations`, `/events`, and public-facing
+ *    `/communityResources` exist as top-level collections.
+ *
+ * Key Security Decisions:
+ * - Denormalized Accessors: To manage access to sensitive patient data, each health-related document (e.g., a HealthRecord)
+ *   contains a denormalized `authorizedAccessors` map. This map includes the patient's UID and the UIDs of all their
+ *   caregivers and professionals, allowing rules to grant access with a simple map lookup instead of a cross-document `get()`.
+ * - Collaborative Membership: Access to conversations and events is controlled by `participantIds` and `attendeeIds` arrays
+ *   stored directly on the respective documents.
+ * - Role Management via Existence: Administrator privileges are granted based on the existence of a document in the
+ *   `/roles_admin/{adminId}` collection. This is a secure and efficient way to manage global roles.
+ * - Structural Segregation: Private user data (e.g., AI chat logs) is stored in user-owned subcollections, completely
+ *   separate from public data (e.g., `/communityResources`), which prevents accidental data leakage and simplifies list queries.
+ * - Default-Deny Posture: Access is denied by default. All permissions must be explicitly granted. Listing of sensitive
+ *   top-level collections like `/conversations` is disabled to force clients to use secure, targeted queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation for document ownership rules.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the document already exists and if the user is the owner.
+     * Used for secure update and delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Checks if the user has administrative privileges by checking for
+     * the existence of a corresponding document in the roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the requesting user is listed as an authorized accessor on an existing document.
+     * Used for patient-related data.
+     */
+    function isAuthorizedAccessor() {
+      return isSignedIn() && request.auth.uid in resource.data.authorizedAccessors;
+    }
+    
+    /**
+     * Checks if the requesting user is listed as an authorized accessor on a document being created.
+     * Used for patient-related data.
+     */
+    function isNewAuthorizedAccessor() {
+      return isSignedIn() && request.auth.uid in request.resource.data.authorizedAccessors;
+    }
+
+    /**
+     * Checks if the requesting user is a participant in a given conversation.
+     * Requires a get() call to the parent conversation document.
+     */
+    function isConversationParticipant(conversationId) {
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+
+    // ------------------------------------------------------------------------
+    // User Profiles & Private Subcollections
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages a user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own profile document, where the document ID matches their UID.
+     * @deny (create) A user trying to create a profile for another UID.
+     * @principle Enforces Self-Creation and Ownership. A user has full control over their own document.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false; // Disallow listing all users for privacy.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId) || isAdmin();
+
+      /**
+       * @description Manages a user's 1-to-1 accessibility settings.
+       * @path /users/{userId}/accessibilitySettings/current
+       * @allow (get, create, update, delete) A user managing their own settings.
+       * @deny (get) Another user trying to read someone else's settings.
+       * @principle Restricts access to a user's own data tree.
+       */
+      match /accessibilitySettings/current {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Manages a user's 1-to-1 notification settings.
+       * @path /users/{userId}/notificationSettings/current
+       * @allow (get, create, update, delete) A user managing their own settings.
+       * @deny (update) Another user trying to change someone else's settings.
+       * @principle Restricts access to a user's own data tree.
+       */
+      match /notificationSettings/current {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+      
+      /**
+       * @description Manages a user's private AI chat history.
+       * @path /users/{userId}/aiChatInteractions/{interactionId}
+       * @allow (create) The user creating a new AI chat log entry for themselves.
+       * @deny (get) Another user trying to read the user's private chat history.
+       * @principle Enforces strict ownership over sensitive, private data.
+       */
+      match /aiChatInteractions/{interactionId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Patient Data Subcollections (Shared Access)
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages a patient's health records. Access is granted to users listed in the `authorizedAccessors` map.
+     * @path /users/{patientId}/healthRecords/{healthRecordId}
+     * @allow (get) A caregiver (`request.auth.uid` is in `resource.data.authorizedAccessors`) reading a patient's record.
+     * @deny (create) A user creating a record but not including their own UID in the `authorizedAccessors` map.
+     * @principle Uses a denormalized access list (`authorizedAccessors`) for efficient and secure shared access control.
+     */
+    match /users/{patientId}/healthRecords/{healthRecordId} {
+      allow get: if isAuthorizedAccessor();
+      allow list: if isOwner(patientId); // Only the patient can list all their records. Others must use collection group queries.
+      allow create: if isNewAuthorizedAccessor() && request.resource.data.patientId == patientId && request.auth.uid == request.resource.data.recordedByUserId;
+      allow update: if resource != null && isAuthorizedAccessor() && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if resource != null && isAuthorizedAccessor() && (isOwner(patientId) || isOwner(resource.data.recordedByUserId));
+    }
+
+    /**
+     * @description Manages a patient's vitals entries, with access controlled by the `authorizedAccessors` map.
+     * @path /users/{patientId}/vitalsEntries/{vitalsEntryId}
+     * @allow (get) The patient (`request.auth.uid` == `patientId`) reading their own vitals.
+     * @deny (delete) A caregiver trying to delete a record they did not create.
+     * @principle Uses a denormalized access list (`authorizedAccessors`) for efficient and secure shared access control.
+     */
+    match /users/{patientId}/vitalsEntries/{vitalsEntryId} {
+      allow get: if isAuthorizedAccessor();
+      allow list: if isOwner(patientId);
+      allow create: if isNewAuthorizedAccessor() && request.resource.data.patientId == patientId && request.auth.uid == request.resource.data.recordedByUserId;
+      allow update: if resource != null && isAuthorizedAccessor() && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if resource != null && isAuthorizedAccessor() && (isOwner(patientId) || isOwner(resource.data.recordedByUserId));
+    }
+
+    /**
+     * @description Manages a patient's medication list, with access controlled by the `authorizedAccessors` map.
+     * @path /users/{patientId}/medications/{medicationId}
+     * @allow (create) A professional (in `authorizedAccessors`) prescribing a new medication.
+     * @deny (update) An unauthorized user trying to change a medication's dosage.
+     * @principle Uses a denormalized access list (`authorizedAccessors`) for efficient and secure shared access control.
+     */
+    match /users/{patientId}/medications/{medicationId} {
+      allow get: if isAuthorizedAccessor();
+      allow list: if isOwner(patientId);
+      allow create: if isNewAuthorizedAccessor() && request.resource.data.patientId == patientId && request.auth.uid == request.resource.data.prescribedByUserId;
+      allow update: if resource != null && isAuthorizedAccessor() && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if resource != null && isAuthorizedAccessor() && (isOwner(patientId) || isOwner(resource.data.prescribedByUserId));
+    }
+
+    /**
+     * @description Manages medication adherence records, with access controlled by the `authorizedAccessors` map.
+     * @path /users/{patientId}/medicationAdherence/{adherenceId}
+     * @allow (create) The patient or a caregiver (both in `authorizedAccessors`) logging a medication dose.
+     * @deny (get) A user not in the `authorizedAccessors` map trying to view adherence history.
+     * @principle Uses a denormalized access list (`authorizedAccessors`) for efficient and secure shared access control.
+     */
+    match /users/{patientId}/medicationAdherence/{adherenceId} {
+      allow get: if isAuthorizedAccessor();
+      allow list: if isOwner(patientId);
+      allow create: if isNewAuthorizedAccessor() && request.resource.data.patientId == patientId && request.auth.uid == request.resource.data.recordedByUserId;
+      allow update: if resource != null && isAuthorizedAccessor() && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if resource != null && isAuthorizedAccessor() && (isOwner(patientId) || isOwner(resource.data.recordedByUserId));
+    }
+
+    /**
+     * @description Manages a patient's daily check-ins, with access controlled by the `authorizedAccessors` map.
+     * @path /users/{patientId}/dailyCheckIns/{checkInId}
+     * @allow (create) The patient (`request.auth.uid` == `patientId`) creating their own check-in.
+     * @deny (update) A caregiver attempting to modify a past check-in created by the patient.
+     * @principle Uses a denormalized access list (`authorizedAccessors`) for efficient and secure shared access control.
+     */
+    match /users/{patientId}/dailyCheckIns/{checkInId} {
+      allow get: if isAuthorizedAccessor();
+      allow list: if isOwner(patientId);
+      allow create: if isNewAuthorizedAccessor() && isOwner(patientId) && request.resource.data.patientId == patientId;
+      allow update: if resource != null && isAuthorizedAccessor() && isOwner(patientId) && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if resource != null && isAuthorizedAccessor() && isOwner(patientId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Conversations and Messaging
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages chat conversations. Access is restricted to users in the `participantIds` array.
+     * @path /conversations/{conversationId}
+     * @allow (get) A user who is a member of `resource.data.participantIds` reading the conversation metadata.
+     * @deny (list) Any user trying to list all conversations in the database.
+     * @principle Secures data based on a membership list stored directly on the document.
+     */
+    match /conversations/{conversationId} {
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow list: if false; // Disallow listing all conversations for privacy.
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow update: if resource != null && isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow delete: if false; // Deleting conversations is often a complex business logic operation.
+
+      /**
+       * @description Manages individual messages within a conversation. Access is inherited from the parent conversation.
+       * @path /conversations/{conversationId}/messages/{messageId}
+       * @allow (create) A conversation participant sending a message as themselves.
+       * @deny (create) A user trying to send a message in a conversation they are not part of.
+       * @principle Enforces subcollection security by checking membership status on the parent document.
+       */
+      match /messages/{messageId} {
+        allow get, list: if isConversationParticipant(conversationId);
+        allow create: if isConversationParticipant(conversationId) && isOwner(request.resource.data.senderId);
+        allow update: if resource != null && isConversationParticipant(conversationId) && isOwner(resource.data.senderId);
+        allow delete: if resource != null && isConversationParticipant(conversationId) && isOwner(resource.data.senderId);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Community Features
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages community events. Read access is open to all signed-in users, while writes are restricted.
+     * @path /events/{eventId}
+     * @allow (update) The event organizer updating the event details.
+     * @deny (delete) A regular attendee trying to delete the event.
+     * @principle Differentiates access levels for organizers vs. attendees.
+     */
+    match /events/{eventId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
+      allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
+      allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
+    }
+
+    /**
+     * @description Manages publicly shared community resources.
+     * @path /communityResources/{resourceId}
+     * @allow (get, list) Any user, including unauthenticated ones, reading a resource.
+     * @deny (update) A signed-in user trying to modify a resource uploaded by someone else.
+     * @principle Implements a "Public Read, Owner-Only Write" pattern for shared content.
+     */
+    match /communityResources/{resourceId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isOwner(request.resource.data.uploadedByUserId);
+      allow update: if resource != null && (isOwner(resource.data.uploadedByUserId) || isAdmin());
+      allow delete: if resource != null && (isOwner(resource.data.uploadedByUserId) || isAdmin());
+    }
+
+    // ------------------------------------------------------------------------
+    // Admin Role Management
+    // ------------------------------------------------------------------------
+    
+    /**
+     * @description Manages admin role documents. The existence of a doc here grants a user admin rights.
+     * @path /roles_admin/{adminId}
+     * @allow (create) An existing admin granting admin rights to another user.
+     * @deny (get) A non-admin user trying to see who the admins are.
+     * @principle Enforces role-based access control for the highest privilege level. Access is restricted to other admins.
+     */
+    match /roles_admin/{adminId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

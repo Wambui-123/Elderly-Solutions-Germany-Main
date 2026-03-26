@@ -1,70 +1,970 @@
 {
   "entities": {
     "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user of the application.",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
+      "description": "Represents a user of the application, encompassing various roles such as Elderly, Caregiver, Professional, and Admin. This entity stores core personal information and role-specific relationships.",
       "properties": {
-        "name": { "type": "string", "description": "The user's full name." },
-        "email": { "type": "string", "format": "email", "description": "The user's email address." },
-        "role": { "type": "string", "enum": ["elderly", "caregiver", "professional", "admin"], "description": "The user's role in the system." },
-        "avatarUrl": { "type": "string", "format": "uri", "description": "URL for the user's profile picture." }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for identification (authentication is handled externally).",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "The user's date of birth.",
+          "format": "date"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role assigned to the user within the application (e.g., 'Elderly', 'Caregiver', 'Professional', 'Admin')."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "The user's primary contact telephone number."
+        },
+        "address": {
+          "type": "string",
+          "description": "The user's physical address."
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture.",
+          "format": "uri"
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Timestamp of the user's last login.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        },
+        "accessibilitySettingsId": {
+          "type": "string",
+          "description": "Reference to the user's accessibility settings. (Relationship: UserProfile 1:1 AccessibilitySettings)"
+        },
+        "notificationSettingsId": {
+          "type": "string",
+          "description": "Reference to the user's notification settings. (Relationship: UserProfile 1:1 NotificationSettings)"
+        },
+        "managedPatientIds": {
+          "type": "array",
+          "description": "References to UserProfile IDs (role: 'Elderly') that this user (role: 'Caregiver' or 'Professional') manages. (Relationship: UserProfile N:N UserProfile)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "caregiverIds": {
+          "type": "array",
+          "description": "References to UserProfile IDs (role: 'Caregiver') who manage this user (role: 'Elderly'). (Relationship: UserProfile N:N UserProfile)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "professionalIds": {
+          "type": "array",
+          "description": "References to UserProfile IDs (role: 'Professional') who manage this user (role: 'Elderly'). (Relationship: UserProfile N:N UserProfile)",
+          "items": {
+            "type": "string"
+          }
+        }
       },
-      "required": ["name", "email", "role"]
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "role",
+        "createdAt",
+        "accessibilitySettingsId",
+        "notificationSettingsId"
+      ]
     },
-    "VitalSign": {
-      "title": "Vital Sign Log",
-      "description": "A log of a user's vital signs for a specific day.",
+    "AccessibilitySettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AccessibilitySettings",
       "type": "object",
+      "description": "Stores user-specific accessibility preferences.",
       "properties": {
-        "date": { "type": "string", "description": "The date of the reading, e.g., 'Mon'" },
-        "heartRate": { "type": "number" },
-        "bloodPressure": { "type": "number", "description": "A single value for charting simplicity" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AccessibilitySettings entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile this setting belongs to. (Relationship: AccessibilitySettings 1:1 UserProfile)"
+        },
+        "fontSizePreference": {
+          "type": "string",
+          "description": "User's preferred font size (e.g., 'sm', 'md', 'lg', 'xl', '2xl')."
+        },
+        "themePreference": {
+          "type": "string",
+          "description": "User's preferred application theme (e.g., 'light', 'dark')."
+        },
+        "highContrastMode": {
+          "type": "boolean",
+          "description": "Indicates if high contrast mode is enabled for the user."
+        },
+        "reduceMotion": {
+          "type": "boolean",
+          "description": "Indicates if reduced motion preference is enabled for the user."
+        }
       },
-      "required": ["date", "heartRate", "bloodPressure"]
+      "required": [
+        "id",
+        "userId",
+        "fontSizePreference",
+        "themePreference",
+        "highContrastMode",
+        "reduceMotion"
+      ]
+    },
+    "NotificationSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NotificationSettings",
+      "type": "object",
+      "description": "Stores user-specific notification preferences.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the NotificationSettings entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile this setting belongs to. (Relationship: NotificationSettings 1:1 UserProfile)"
+        },
+        "emailNotifications": {
+          "type": "boolean",
+          "description": "Indicates if email notifications are enabled."
+        },
+        "smsNotifications": {
+          "type": "boolean",
+          "description": "Indicates if SMS notifications are enabled."
+        },
+        "inAppNotifications": {
+          "type": "boolean",
+          "description": "Indicates if in-app notifications are enabled."
+        },
+        "newMessages": {
+          "type": "boolean",
+          "description": "Indicates if notifications for new messages are enabled."
+        },
+        "eventReminders": {
+          "type": "boolean",
+          "description": "Indicates if notifications for event reminders are enabled."
+        },
+        "healthAlerts": {
+          "type": "boolean",
+          "description": "Indicates if notifications for health alerts are enabled."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "emailNotifications",
+        "smsNotifications",
+        "inAppNotifications",
+        "newMessages",
+        "eventReminders",
+        "healthAlerts"
+      ]
+    },
+    "HealthRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HealthRecord",
+      "type": "object",
+      "description": "Represents a general health record entry for an elderly user, summarizing various health aspects.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the HealthRecord entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Elderly') this health record belongs to. (Relationship: UserProfile 1:N HealthRecord)"
+        },
+        "recordDate": {
+          "type": "string",
+          "description": "The date the health record entry was made.",
+          "format": "date"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A brief summary of the health record entry."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Detailed notes pertaining to the health record."
+        },
+        "recordedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Caregiver' or 'Professional') who recorded this entry. (Relationship: UserProfile 1:N HealthRecord)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the health record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the health record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "recordDate",
+        "summary",
+        "recordedByUserId",
+        "createdAt"
+      ]
+    },
+    "VitalsEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VitalsEntry",
+      "type": "object",
+      "description": "Records specific vital signs readings for an elderly user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the VitalsEntry entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Elderly') for whom these vitals were recorded. (Relationship: UserProfile 1:N VitalsEntry)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the vital signs were recorded.",
+          "format": "date-time"
+        },
+        "bloodPressureSystolic": {
+          "type": "number",
+          "description": "Systolic blood pressure reading (mmHg)."
+        },
+        "bloodPressureDiastolic": {
+          "type": "number",
+          "description": "Diastolic blood pressure reading (mmHg)."
+        },
+        "heartRate": {
+          "type": "number",
+          "description": "Heart rate reading (beats per minute)."
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Body temperature reading (°C or °F)."
+        },
+        "oxygenSaturation": {
+          "type": "number",
+          "description": "Blood oxygen saturation level (%)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes related to the vital signs entry."
+        },
+        "recordedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Caregiver' or 'Professional') who recorded these vitals. (Relationship: UserProfile 1:N VitalsEntry)"
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "bloodPressureSystolic",
+        "bloodPressureDiastolic",
+        "heartRate",
+        "temperature",
+        "oxygenSaturation",
+        "recordedByUserId"
+      ]
     },
     "Medication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Medication",
-      "description": "A medication for a user's schedule.",
       "type": "object",
+      "description": "Defines a specific medication prescribed to an elderly user.",
       "properties": {
-        "name": { "type": "string" },
-        "dosage": { "type": "string" },
-        "time": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Medication entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Elderly') for whom this medication is prescribed. (Relationship: UserProfile 1:N Medication)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the medication."
+        },
+        "dosage": {
+          "type": "string",
+          "description": "The prescribed dosage of the medication."
+        },
+        "frequency": {
+          "type": "string",
+          "description": "How often the medication should be taken (e.g., 'once daily', 'twice a day')."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Specific instructions for taking the medication (e.g., 'with food', 'before bed')."
+        },
+        "prescribedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Professional') who prescribed this medication. (Relationship: UserProfile 1:N Medication)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The date when the medication regimen started.",
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date when the medication regimen is scheduled to end (optional).",
+          "format": "date"
+        }
       },
-      "required": ["name", "dosage", "time"]
+      "required": [
+        "id",
+        "patientId",
+        "name",
+        "dosage",
+        "frequency",
+        "instructions",
+        "prescribedByUserId",
+        "startDate"
+      ]
     },
-    "ChatMessage": {
-      "title": "Chat Message",
-      "description": "A message in a chat between users.",
+    "MedicationAdherence": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MedicationAdherence",
       "type": "object",
+      "description": "Tracks the adherence of an elderly user to their prescribed medication schedule.",
       "properties": {
-        "senderId": { "type": "string" },
-        "text": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MedicationAdherence entity."
+        },
+        "medicationId": {
+          "type": "string",
+          "description": "Reference to the Medication entity this adherence record pertains to. (Relationship: Medication 1:N MedicationAdherence)"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Elderly') who is taking this medication. (Relationship: UserProfile 1:N MedicationAdherence)"
+        },
+        "scheduledTime": {
+          "type": "string",
+          "description": "The scheduled date and time for taking the medication dose.",
+          "format": "date-time"
+        },
+        "actualTakenTime": {
+          "type": "string",
+          "description": "The actual date and time the medication dose was taken (if applicable).",
+          "format": "date-time"
+        },
+        "adherenceStatus": {
+          "type": "string",
+          "description": "The status of adherence for this dose (e.g., 'Taken', 'Missed', 'Scheduled')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about the adherence for this dose."
+        },
+        "recordedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Caregiver' or 'Elderly') who recorded this adherence entry. (Relationship: UserProfile 1:N MedicationAdherence)"
+        }
       },
-      "required": ["senderId", "text", "timestamp"]
+      "required": [
+        "id",
+        "medicationId",
+        "patientId",
+        "scheduledTime",
+        "adherenceStatus",
+        "recordedByUserId"
+      ]
+    },
+    "DailyCheckIn": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyCheckIn",
+      "type": "object",
+      "description": "Records daily self-reported health and well-being check-ins from elderly users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DailyCheckIn entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (role: 'Elderly') who performed this check-in. (Relationship: UserProfile 1:N DailyCheckIn)"
+        },
+        "checkInDate": {
+          "type": "string",
+          "description": "The date of the daily check-in.",
+          "format": "date"
+        },
+        "moodStatus": {
+          "type": "string",
+          "description": "The user's self-reported mood status (e.g., 'Happy', 'Neutral', 'Sad', 'Anxious')."
+        },
+        "energyLevel": {
+          "type": "number",
+          "description": "The user's self-reported energy level on a scale (e.g., 1-5)."
+        },
+        "sleptWell": {
+          "type": "boolean",
+          "description": "Indicates if the user reported sleeping well."
+        },
+        "anyConcerns": {
+          "type": "string",
+          "description": "Any concerns or comments noted by the user during the check-in."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the daily check-in was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the daily check-in was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "checkInDate",
+        "moodStatus",
+        "energyLevel",
+        "sleptWell",
+        "createdAt"
+      ]
+    },
+    "Conversation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Conversation",
+      "type": "object",
+      "description": "Represents a chat conversation or thread between users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Conversation entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the conversation (e.g., for group chats or custom names for 1:1 chats)."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "References to UserProfile IDs participating in this conversation. (Relationship: UserProfile N:N Conversation)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isGroupChat": {
+          "type": "boolean",
+          "description": "Indicates if this is a group chat or a direct 1:1 conversation."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the conversation was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the conversation was last updated (e.g., by a new message).",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "participantIds",
+        "isGroupChat",
+        "createdAt"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents an individual message sent within a conversation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "Reference to the Conversation this message belongs to. (Relationship: Conversation 1:N Message)"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who sent this message. (Relationship: UserProfile 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "conversationId",
+        "senderId",
+        "content",
+        "timestamp"
+      ]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a scheduled event shared within the community hub.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Event entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the event."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The scheduled start date and time of the event.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The scheduled end date and time of the event.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical or virtual location of the event."
+        },
+        "organizerId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who organized this event. (Relationship: UserProfile 1:N Event)"
+        },
+        "attendeeIds": {
+          "type": "array",
+          "description": "References to UserProfile IDs who are attending this event. (Relationship: UserProfile N:N Event)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the event was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the event was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "startTime",
+        "endTime",
+        "organizerId",
+        "createdAt"
+      ]
+    },
+    "CommunityResource": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CommunityResource",
+      "type": "object",
+      "description": "Represents a shared knowledge resource within the community hub.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CommunityResource entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the resource."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the resource's content."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL pointing to the resource content.",
+          "format": "uri"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the resource (e.g., 'Article', 'Video', 'Document', 'Link')."
+        },
+        "uploadedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who uploaded or shared this resource. (Relationship: UserProfile 1:N CommunityResource)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the resource was added to the community.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "url",
+        "type",
+        "uploadedByUserId",
+        "createdAt"
+      ]
+    },
+    "AIChatInteraction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AIChatInteraction",
+      "type": "object",
+      "description": "Stores a log of interactions with the AI-powered chatbots and health companion.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AIChatInteraction entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who initiated the AI interaction. (Relationship: UserProfile 1:N AIChatInteraction)"
+        },
+        "userRole": {
+          "type": "string",
+          "description": "The role of the user at the time of the interaction (e.g., 'Elderly', 'Caregiver', 'Professional')."
+        },
+        "query": {
+          "type": "string",
+          "description": "The user's input query to the AI."
+        },
+        "response": {
+          "type": "string",
+          "description": "The AI's generated response to the query."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the AI interaction occurred.",
+          "format": "date-time"
+        },
+        "aiModelUsed": {
+          "type": "string",
+          "description": "The specific AI model that generated the response (e.g., 'Mistral-7B-Instruct-v0.3', 'Google Gemini')."
+        },
+        "contextDataUsed": {
+          "type": "string",
+          "description": "Optional: A JSON string or identifier representing contextual data used by the AI for reasoning (e.g., specific health records)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "userRole",
+        "query",
+        "response",
+        "timestamp",
+        "aiModelUsed"
+      ]
     }
   },
   "auth": {
-    "providers": ["email"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/backend/entities/UserProfile" },
-      "description": "Stores user profile information."
-    },
-    "/users/{userId}/vitals/{vitalId}": {
-        "schema": { "$ref": "#/backend/entities/VitalSign" },
-        "description": "Stores a user's daily vital signs."
-    },
-    "/users/{userId}/medications/{medicationId}": {
-        "schema": { "$ref": "#/backend/entities/Medication" },
-        "description": "Stores a user's medication schedule."
-    },
-    "/chats/{chatId}/messages/{messageId}": {
-        "schema": { "$ref": "#/backend/entities/ChatMessage" },
-        "description": "Stores messages within a chat."
-    }
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores core user profile information. The document ID (`userId`) MUST be the Firebase Auth UID. Includes denormalized 'managedPatientIds', 'caregiverIds', and 'professionalIds' for relationship tracking, used to populate 'authorizedAccessors' in patient-related documents. The 'accessibilitySettingsId' and 'notificationSettingsId' fields will point to 'current' as their respective subcollection document IDs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Auth User ID (UID)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/accessibilitySettings/current",
+        "definition": {
+          "entityName": "AccessibilitySettings",
+          "schema": {
+            "$ref": "#/backend/entities/AccessibilitySettings"
+          },
+          "description": "Stores user-specific accessibility preferences. The document ID is fixed to 'current' as it's a 1:1 relationship with the user. Includes 'userId' for authorization validation.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Auth User ID (UID) this setting belongs to."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/notificationSettings/current",
+        "definition": {
+          "entityName": "NotificationSettings",
+          "schema": {
+            "$ref": "#/backend/entities/NotificationSettings"
+          },
+          "description": "Stores user-specific notification preferences. The document ID is fixed to 'current' as it's a 1:1 relationship with the user. Includes 'userId' for authorization validation.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Auth User ID (UID) this setting belongs to."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{patientId}/healthRecords/{healthRecordId}",
+        "definition": {
+          "entityName": "HealthRecord",
+          "schema": {
+            "$ref": "#/backend/entities/HealthRecord"
+          },
+          "description": "Stores general health records for an elderly patient. Includes 'patientId' for path-based ownership. CRITICAL: Includes denormalized 'authorizedAccessors' map ({ [uid: string]: boolean }) for authorization independence, containing the patient, their caregivers, and professionals. 'recordedByUserId' indicates who created the entry.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique Firebase Auth User ID (UID) of the Elderly patient."
+            },
+            {
+              "name": "healthRecordId",
+              "description": "The unique ID of the health record entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{patientId}/vitalsEntries/{vitalsEntryId}",
+        "definition": {
+          "entityName": "VitalsEntry",
+          "schema": {
+            "$ref": "#/backend/entities/VitalsEntry"
+          },
+          "description": "Records vital signs readings for an elderly patient. Includes 'patientId' for path-based ownership. CRITICAL: Includes denormalized 'authorizedAccessors' map ({ [uid: string]: boolean }) for authorization independence, containing the patient, their caregivers, and professionals. 'recordedByUserId' indicates who recorded the vitals.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique Firebase Auth User ID (UID) of the Elderly patient."
+            },
+            {
+              "name": "vitalsEntryId",
+              "description": "The unique ID of the vitals entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{patientId}/medications/{medicationId}",
+        "definition": {
+          "entityName": "Medication",
+          "schema": {
+            "$ref": "#/backend/entities/Medication"
+          },
+          "description": "Defines prescribed medication for an elderly patient. Includes 'patientId' for path-based ownership. CRITICAL: Includes denormalized 'authorizedAccessors' map ({ [uid: string]: boolean }) for authorization independence, containing the patient, their caregivers, and professionals. 'prescribedByUserId' indicates who prescribed the medication.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique Firebase Auth User ID (UID) of the Elderly patient."
+            },
+            {
+              "name": "medicationId",
+              "description": "The unique ID of the medication."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{patientId}/medicationAdherence/{adherenceId}",
+        "definition": {
+          "entityName": "MedicationAdherence",
+          "schema": {
+            "$ref": "#/backend/entities/MedicationAdherence"
+          },
+          "description": "Tracks medication adherence for an elderly patient. Includes 'patientId' for path-based ownership. CRITICAL: Includes denormalized 'authorizedAccessors' map ({ [uid: string]: boolean }) for authorization independence, containing the patient, their caregivers, and professionals. 'recordedByUserId' indicates who recorded the adherence (can be patient or caregiver).",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique Firebase Auth User ID (UID) of the Elderly patient."
+            },
+            {
+              "name": "adherenceId",
+              "description": "The unique ID of the medication adherence entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{patientId}/dailyCheckIns/{checkInId}",
+        "definition": {
+          "entityName": "DailyCheckIn",
+          "schema": {
+            "$ref": "#/backend/entities/DailyCheckIn"
+          },
+          "description": "Records daily self-reported health check-ins from elderly users. Includes 'patientId' for path-based ownership. CRITICAL: Includes denormalized 'authorizedAccessors' map ({ [uid: string]: boolean }) for authorization independence, containing the patient, their caregivers, and professionals. 'patientId' is also the 'recordedByUserId'.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique Firebase Auth User ID (UID) of the Elderly patient."
+            },
+            {
+              "name": "checkInId",
+              "description": "The unique ID of the daily check-in entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/aiChatInteractions/{interactionId}",
+        "definition": {
+          "entityName": "AIChatInteraction",
+          "schema": {
+            "$ref": "#/backend/entities/AIChatInteraction"
+          },
+          "description": "Stores logs of AI chatbot interactions, private to the user who initiated them. Includes 'userId' for path-based ownership and internal validation.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Auth User ID (UID) who initiated the AI interaction."
+            },
+            {
+              "name": "interactionId",
+              "description": "The unique ID of the AI chat interaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Represents a chat conversation. CRITICAL: Includes 'participantIds' (membership map) for authorization independence, defining who can access the conversation.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique ID of the conversation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Represents an individual message within a conversation. Includes 'senderId' and 'conversationId'. CRITICAL: Denormalizes 'conversationParticipantIds' from its parent Conversation for authorization independence, allowing direct checks without `get()`.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique ID of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique ID of the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Represents a scheduled community event. Includes 'organizerId' and 'attendeeIds' (membership map) for authorization independence, defining who can access/manage the event.",
+          "params": [
+            {
+              "name": "eventId",
+              "description": "The unique ID of the event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/communityResources/{resourceId}",
+        "definition": {
+          "entityName": "CommunityResource",
+          "schema": {
+            "$ref": "#/backend/entities/CommunityResource"
+          },
+          "description": "Stores shared knowledge resources for the community. Publicly readable, but write access is restricted to the 'uploadedByUserId' or Admin users.",
+          "params": [
+            {
+              "name": "resourceId",
+              "description": "The unique ID of the community resource."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Dedicated collection for Admin role management. The existence of a document at this path for a given UID signifies Admin privileges. Document content can be minimal (e.g., just an ID or timestamp).",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique Firebase Auth User ID (UID) of an administrator."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore structure prioritizes Authorization Independence and Structural Segregation to ensure robust, debuggable security rules and efficient data access. \n\n**Authorization Independence (CRITICAL):** This design heavily relies on denormalization to avoid hierarchical authorization dependencies (`get()` calls in security rules):\n\n1.  **Patient-Specific Data (Health Records, Vitals, Medications, Daily Check-Ins):** For `/users/{patientId}/...` subcollections, each document (e.g., `HealthRecord`, `VitalsEntry`) will include a denormalized `authorizedAccessors` map. This map will contain the `patientId` (the elderly user's UID) and all UIDs of their associated `Caregiver` and `Professional` users (sourced from the `caregiverIds` and `professionalIds` fields on the `patientId`'s `UserProfile`). This allows security rules to check `request.auth.uid in resource.data.authorizedAccessors` directly on the document, eliminating the need to `get()` the patient's `UserProfile`.\n2.  **Messaging (`Conversation` and `Message`):**\n    *   `Conversation` documents explicitly list all `participantIds`. Rules check `request.auth.uid in resource.data.participantIds`.\n    *   `Message` documents, residing in a subcollection of `Conversation`, will denormalize their parent's `conversationParticipantIds` (a copy of the `participantIds` from the `Conversation` document). This ensures that rules for messages can verify sender/participant status without needing to `get()` the parent `Conversation` document.\n3.  **Collaborative Events:** `Event` documents contain `organizerId` and `attendeeIds`, allowing direct authorization checks.\n4.  **User-Owned Settings & AI Interactions:** `AccessibilitySettings`, `NotificationSettings`, and `AIChatInteraction` are stored as subcollections under `/users/{userId}/...`, with `userId` directly in the path and the document, ensuring clear, path-based ownership and eliminating external dependencies.\n5.  **Role-Based Access (DBAC):** User roles are primarily stored in the `role` field of `UserProfile` documents. For elevated privileges, an `Admin` role is managed through a dedicated top-level collection (`/roles_admin/{adminId}`), where the *existence* of a document for a given UID grants admin privileges. This adheres to the 'Existence over Content' principle for global roles.\n\n**QAPs (Rules are not Filters):**\n\n1.  **Path-Based Ownership:** For private user data (`/users/{userId}/...`), the `userId` in the path ensures that queries are automatically scoped to the authenticated user (`request.auth.uid == userId`), making `list` operations secure and efficient.\n2.  **Denormalized Accessors:** For patient-specific data, the `authorizedAccessors` map in each document allows for secure and filterable `list` operations. A caregiver or professional can query for all health records where they are an `authorizedAccessor` (`collectionGroup('healthRecords').where('authorizedAccessors.' + request.auth.uid, '==', true)`). This enables robust QAPs by ensuring clients cannot request data they are not authorized to view.\n3.  **Membership Models:** For `Conversations` and `Events`, the `participantIds` and `attendeeIds` fields (respectively) enable efficient `list` operations by filtering based on membership (`where('participantIds', 'array-contains', request.auth.uid)` or similar compound queries).\n\n**Structural Segregation:** All documents within a given collection or subcollection share the same security posture. For instance, all documents under `/users/{patientId}/healthRecords` have the same access requirements based on the `authorizedAccessors` field. This prevents mixed-access data within a single collection, simplifying security rules significantly. General community resources are in `/communityResources`, separated from private data, with clear global read and restricted write policies.\n\nThis design leverages denormalization extensively, requiring robust Cloud Function triggers to maintain data consistency (e.g., updating `authorizedAccessors` when a caregiver is added to a patient's profile or updating `conversationParticipantIds` when a conversation's participants change). This upfront complexity in data management is a trade-off for simplified, secure, and performant Firestore security rules and atomic database operations."
   }
 }
