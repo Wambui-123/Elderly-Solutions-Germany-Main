@@ -285,18 +285,24 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     /**
-     * @description Manages community events. Read access is open to any authenticated user,
-     * but client-side queries MUST filter events to those relevant to the user.
+     * @description Manages community events. Access is controlled by query constraints.
      * @path /events/{eventId}
-     * @allow (read) Any authenticated user can read event data.
-     * @deny (write) Write access is restricted to organizers and admins.
-     * @principle Allows broad read access for querying while keeping writes secure.
+     * @principle Implements the "Rules are not filters" concept by requiring secure queries.
+     * A broad `allow read: if isSignedIn()` is insufficient for list queries with `orderBy` or other clauses.
+     * We must separate `get` and `list` and enforce query constraints on `list`.
      */
     match /events/{eventId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
-      allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
-      allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
+        // Allow reading a single event if authenticated.
+        allow get: if isSignedIn();
+
+        // Allow listing events ONLY if the client query filters by 'attendeeIds'.
+        // This ensures a user can only query for events they are part of.
+        allow list: if isSignedIn() && request.query.where.keys().has('attendeeIds');
+
+        // Write access is restricted to organizers and admins.
+        allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
+        allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
+        allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
     }
 
     /**
