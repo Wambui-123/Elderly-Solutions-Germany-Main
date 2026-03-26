@@ -11,7 +11,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Bot } from "lucide-react";
 import Link from "next/link";
 import { UserNav } from "@/components/dashboard/user-nav";
 
@@ -54,10 +54,14 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1">{children}</main>
-          </div>
+            <main className="flex-1 overflow-y-auto">{children}</main>
+            <Button asChild size="icon" className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-30">
+                <Link href="/dashboard/knowledge">
+                    <Bot className="h-8 w-8" />
+                    <span className="sr-only">AI Knowledge Hub</span>
+                </Link>
+            </Button>
         </SidebarInset>
         <MobileNav />
       </div>
