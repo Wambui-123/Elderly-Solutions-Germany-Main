@@ -54,9 +54,18 @@ export function RegisterForm() {
     },
   });
 
+  const onSubmit = (data: SignupFormValues) => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('password', data.password);
+    formData.append('role', data.role);
+    formAction(formData);
+  };
+
   return (
     <Form {...form}>
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {state?.message && (
           <Alert variant="destructive">
             <Terminal className="h-4 w-4" />
@@ -125,7 +134,7 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
           Create Account
         </Button>
         <div className="relative">

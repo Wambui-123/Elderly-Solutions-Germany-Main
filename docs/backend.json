@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user of the application.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The user's full name." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "role": { "type": "string", "enum": ["elderly", "caregiver", "professional", "admin"], "description": "The user's role in the system." },
+        "avatarUrl": { "type": "string", "format": "uri", "description": "URL for the user's profile picture." }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "VitalSign": {
+      "title": "Vital Sign Log",
+      "description": "A log of a user's vital signs for a specific day.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "description": "The date of the reading, e.g., 'Mon'" },
+        "heartRate": { "type": "number" },
+        "bloodPressure": { "type": "number", "description": "A single value for charting simplicity" }
+      },
+      "required": ["date", "heartRate", "bloodPressure"]
+    },
+    "Medication": {
+      "title": "Medication",
+      "description": "A medication for a user's schedule.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "dosage": { "type": "string" },
+        "time": { "type": "string" }
+      },
+      "required": ["name", "dosage", "time"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message in a chat between users.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "text", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["email"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Stores user profile information."
+    },
+    "/users/{userId}/vitals/{vitalId}": {
+        "schema": { "$ref": "#/backend/entities/VitalSign" },
+        "description": "Stores a user's daily vital signs."
+    },
+    "/users/{userId}/medications/{medicationId}": {
+        "schema": { "$ref": "#/backend/entities/Medication" },
+        "description": "Stores a user's medication schedule."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+        "schema": { "$ref": "#/backend/entities/ChatMessage" },
+        "description": "Stores messages within a chat."
+    }
+  }
+}
