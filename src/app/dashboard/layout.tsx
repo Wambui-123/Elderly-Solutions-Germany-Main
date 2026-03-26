@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { useEffect } from "react";
 
 
 export default function DashboardLayout({
@@ -34,23 +35,24 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  // If loading, show a spinner.
-  if (loading) {
+  useEffect(() => {
+    // If loading is finished and there's no authenticated user, redirect.
+    if (!loading && !firebaseUser) {
+      router.replace('/login');
+    }
+  }, [loading, firebaseUser, router]);
+
+  // While loading, or if there's no user (and redirect is imminent), show a spinner.
+  if (loading || !firebaseUser) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
-
-  // If not authenticated, redirect to login.
-  if (!firebaseUser && !loading) {
-    router.replace('/login');
-    return null;
-  }
   
   // If user data is still loading but firebase user exists
-  if (!user && !loading) {
+  if (!user) {
     return (
        <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
