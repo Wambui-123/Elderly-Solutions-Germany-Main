@@ -1,35 +1,9 @@
-/**
- * Core Philosophy: This ruleset enforces a sophisticated role-based access control (RBAC) model
- * centered on a care network. An 'Elderly' user's private data can be accessed by the user themselves,
- * their designated 'Caregivers', and associated 'Professionals'. Access is also provided for collaborative
- * 'Community' groups and globally privileged 'Admins'.
- *
- * Data Structure:
- * - /user_profiles/{userId}: Core document for all user types. Sensitive health data for 'Elderly' users
- *   is nested within this path (e.g., /user_profiles/{elderlyUserId}/health_metrics).
- * - /communities/{communityId}: Collaborative spaces with their own subcollections for messages and events.
- * - /admin_roles/{userId}: An existence-based collection to efficiently grant global admin rights.
- * - Root-level collections (/events, /knowledge_resources) for public or globally-scoped data.
- *
- * Key Security Decisions:
- * - Authorization Independence: To ensure performance and security, rules avoid cross-document `get()`
- *   calls wherever possible. However, `get()` is used pragmatically to check a user's role on their
- *   own profile or to verify membership in a care network (e.g., checking an Elderly user's `caregiverIds`)
- *   for list operations, which is a necessary and efficient pattern.
- * - Care Network Access: An Elderly user's data is accessible by a closed group of collaborators
- *   (the user, their caregivers, their professionals). This is managed by checking arrays on the
- *   parent Elderly user's profile document.
- * - Community Membership: Access to community-specific data (messages, events) is restricted to users
- *   listed in the parent community's `memberIds` array.
- * - No User Enumeration: Listing the top-level `/user_profiles` collection is disabled to protect user privacy.
- * - Admin Privileges: Admins have read/write access across most of the database for moderation and
- *   administrative purposes. This is managed via the `isAdmin()` helper function.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for reusable logic
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -38,13 +12,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Checks if the user has a document in the admin_roles collection.
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid));
     }
 
-    // Checks if the user is the Elderly patient, one of their linked caregivers/professionals, or an admin.
-    // This requires a 'get' call to the Elderly user's profile to check the linked user arrays.
     function isMemberOfCareNetwork(elderlyUserId) {
       let userProfile = get(/databases/$(database)/documents/user_profiles/$(elderlyUserId)).data;
       return isOwner(elderlyUserId) ||
@@ -53,54 +24,30 @@ service cloud.firestore {
              isAdmin();
     }
 
-    // Checks if the user is a member of a community by reading the parent community document.
     function isCommunityMember(communityId) {
       let community = get(/databases/$(database)/documents/communities/$(communityId)).data;
       return isSignedIn() && (community.memberIds != null && community.memberIds.hasAny([request.auth.uid]));
     }
 
-    // Checks if the user has a 'Professional' role or is an admin.
-    // This requires a 'get' to the user's own profile, which is an acceptable pattern.
     function isProfessionalOrAdmin() {
       let userProfile = get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data;
       return isAdmin() || userProfile.role == 'Professional';
     }
 
-
-    /**
-     * @description Manages user profile data. A user can create, read, and write their own profile.
-     * @path /user_profiles/{userId}
-     * @allow (create) An authenticated user creating their own profile document: `auth.uid == userId`.
-     * @deny (list) Any user attempting to list all user profiles.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
-     */
+    // -------------------------------
+    // User Profiles
     match /user_profiles/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-      // Simplified create rule to be more resilient. The user's UID is already in the path.
       allow create: if isOwner(userId);
-      allow update: if (isOwner(userId) || isAdmin());
-      allow delete: if (isOwner(userId) || isAdmin());
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    /**
-     * @description Manages global admin roles. Existence of a doc grants admin privileges.
-     * @path /admin_roles/{userId}
-     * @allow (create) An existing admin adding a new admin.
-     * @deny (create) A non-admin user attempting to grant themselves admin rights.
-     * @principle Enforces privilege control; only admins can manage other admins.
-     */
     match /admin_roles/{userId} {
       allow read, write: if isAdmin();
     }
 
-    /**
-     * @description Secures health metrics for an Elderly user.
-     * @path /user_profiles/{elderlyUserId}/health_metrics/{healthMetricId}
-     * @allow (get, list) The elderly user or their linked caregivers/professionals reading the metrics.
-     * @deny (create) A user not in the care network attempting to add a health metric.
-     * @principle Enforces closed collaborator access based on the parent user's care network.
-     */
     match /user_profiles/{elderlyUserId}/health_metrics/{healthMetricId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
@@ -108,13 +55,6 @@ service cloud.firestore {
       allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
-    /**
-     * @description Secures medication records for an Elderly user.
-     * @path /user_profiles/{elderlyUserId}/medications/{medicationId}
-     * @allow (get, list) The elderly user or their linked caregivers/professionals viewing medications.
-     * @deny (create) An unassociated user attempting to add a medication record.
-     * @principle Enforces closed collaborator access based on the parent user's care network.
-     */
     match /user_profiles/{elderlyUserId}/medications/{medicationId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId;
@@ -122,13 +62,6 @@ service cloud.firestore {
       allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
-    /**
-     * @description Secures medication adherence records.
-     * @path /user_profiles/{elderlyUserId}/medications/{medicationId}/adherence_records/{adherenceId}
-     * @allow (create) A member of the care network recording that a medication was taken.
-     * @deny (get) A user outside the care network trying to read adherence data.
-     * @principle Enforces closed collaborator access based on the grandparent user's care network.
-     */
     match /user_profiles/{elderlyUserId}/medications/{medicationId}/adherence_records/{adherenceId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
@@ -136,13 +69,6 @@ service cloud.firestore {
       allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
-    /**
-     * @description Secures general health log entries for an Elderly user.
-     * @path /user_profiles/{elderlyUserId}/health_logs/{healthLogId}
-     * @allow (get, list) The elderly user or their linked caregivers/professionals reading logs.
-     * @deny (create) An unassociated user attempting to add a health log.
-     * @principle Enforces closed collaborator access based on the parent user's care network.
-     */
     match /user_profiles/{elderlyUserId}/health_logs/{healthLogId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
@@ -150,124 +76,78 @@ service cloud.firestore {
       allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
-    /**
-     * @description Secures daily check-in data submitted by an Elderly user.
-     * @path /user_profiles/{elderlyUserId}/daily_check_ins/{checkInId}
-     * @allow (get, list) The elderly user or their linked caregivers/professionals viewing check-ins.
-     * @deny (create) Anyone other than the Elderly user submitting a daily check-in for them.
-     * @principle Enforces closed collaborator access, but creation is restricted to the subject user.
-     */
     match /user_profiles/{elderlyUserId}/daily_check_ins/{checkInId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isOwner(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId;
       allow update: if isOwner(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
       allow delete: if isOwner(elderlyUserId);
     }
-    
-    /**
-     * @description Manages conversation metadata.
-     * @principle Allows authenticated users to query for conversations they are a part of, but message content is protected.
-     */
+
+    // -------------------------------
+    // Conversations
     match /conversations/{conversationId} {
-        // A user can GET a specific conversation doc if they are a participant. This rule is more secure.
-        allow get: if isSignedIn() && resource.data.participantIds.hasAny([request.auth.uid]);
+      // Get only if the user is a participant
+      allow get: if isSignedIn() && resource.data.participantIds.hasAny([request.auth.uid]);
 
-        // A user can LIST conversations if they are signed in. This is required for the client-side query
-        // to work, which then filters conversations to only those the user is a part of.
-        allow list: if isSignedIn();
-        
-        // A user can create or update a conversation if they are a participant.
-        allow write: if isSignedIn() && request.resource.data.participantIds.hasAny([request.auth.uid]);
+      // List conversations: allow signed-in users, frontend must filter by participantIds
+      allow list: if isSignedIn();
+
+      // Create/Update only if user is a participant
+      allow write: if isSignedIn() && request.resource.data.participantIds.hasAny([request.auth.uid]);
     }
 
-    /**
-     * @description Manages messages within a conversation.
-     * @path /conversations/{conversationId}/messages/{messageId}
-     * @allow (read, create) A user who is a participant in the parent conversation.
-     * @principle Inherits access control from the parent conversation document.
-     */
     match /conversations/{conversationId}/messages/{messageId} {
-        // A user can read messages if they are listed in the parent conversation's `participantIds`.
-        allow read: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
-        
-        // A user can create a message if they are the sender AND a participant in the conversation.
-        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
-        
-        // A user can only update or delete their own messages.
-        allow update, delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      allow read: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid &&
+                    get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+      allow update, delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
     }
 
-    /**
-     * @description Defines a community group.
-     * @path /communities/{communityId}
-     * @allow (get) A member of the community reading its details.
-     * @deny (update) A regular member trying to change the community description.
-     * @principle Enforces membership for reads and creator-ownership for writes. Allows discovery.
-     */
+    // -------------------------------
+    // Communities
     match /communities/{communityId} {
       allow get: if isCommunityMember(communityId) || isAdmin();
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.createdByUserId == request.auth.uid && request.resource.data.memberIds.hasAny([request.auth.uid]);
-      allow update: if (isOwner(resource.data.createdByUserId) || isAdmin());
-      allow delete: if (isOwner(resource.data.createdByUserId) || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.createdByUserId == request.auth.uid &&
+                    request.resource.data.memberIds.hasAny([request.auth.uid]);
+      allow update: if isOwner(resource.data.createdByUserId) || isAdmin();
+      allow delete: if isOwner(resource.data.createdByUserId) || isAdmin();
     }
 
-    /**
-     * @description Messages within a specific community.
-     * @path /communities/{communityId}/messages/{messageId}
-     * @allow (create) A community member posting a new message.
-     * @deny (list) A non-member trying to read the community's messages.
-     * @principle Enforces that only community members can read or post messages.
-     */
     match /communities/{communityId}/messages/{messageId} {
       allow get, list: if isCommunityMember(communityId) || isAdmin();
-      allow create: if isCommunityMember(communityId) && request.resource.data.senderId == request.auth.uid && request.resource.data.communityId == communityId;
-      allow update: if (isOwner(resource.data.senderId) || isAdmin());
-      allow delete: if (isOwner(resource.data.senderId) || isAdmin());
+      allow create: if isCommunityMember(communityId) && request.resource.data.senderId == request.auth.uid &&
+                    request.resource.data.communityId == communityId;
+      allow update: if isOwner(resource.data.senderId) || isAdmin();
+      allow delete: if isOwner(resource.data.senderId) || isAdmin();
     }
 
-    /**
-     * @description Events scheduled within a specific community.
-     * @path /communities/{communityId}/events/{eventId}
-     * @allow (create) A community member creating a new event for the group.
-     * @deny (get) A non-member trying to view a private community event.
-     * @principle Enforces that only community members can interact with community events.
-     */
     match /communities/{communityId}/events/{eventId} {
       allow get, list: if isCommunityMember(communityId) || isAdmin();
-      allow create: if isCommunityMember(communityId) && request.resource.data.creatorId == request.auth.uid && request.resource.data.communityId == communityId;
-      allow update: if (isOwner(resource.data.creatorId) || isAdmin());
-      allow delete: if (isOwner(resource.data.creatorId) || isAdmin());
+      allow create: if isCommunityMember(communityId) && request.resource.data.creatorId == request.auth.uid &&
+                    request.resource.data.communityId == communityId;
+      allow update: if isOwner(resource.data.creatorId) || isAdmin();
+      allow delete: if isOwner(resource.data.creatorId) || isAdmin();
     }
 
-    /**
-     * @description Stand-alone events not tied to a specific community.
-     * @path /events/{eventId}
-     * @allow (get, list) An authenticated user can list events they are attending.
-     * @allow (get) An authenticated user can get a specific event they are an attendee of.
-     * @deny (update) A user who did not create the event trying to change its time.
-     * @principle Implements a public-read (if attendee), owner-only write model.
-     */
+    // -------------------------------
+    // Stand-alone events
     match /events/{eventId} {
       allow get: if isSignedIn() && resource.data.attendeeIds.hasAny([request.auth.uid]);
-      allow list: if isSignedIn() && request.query.whereKeys[0] == 'attendeeIds' && request.query.whereValues[0] == request.auth.uid;
+      allow list: if isSignedIn() && request.query.whereKeys[0] == 'attendeeIds' &&
+                    request.query.whereValues[0] == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.organizerId == request.auth.uid;
-      allow update: if (isOwner(resource.data.organizerId) || isAdmin());
-      allow delete: if (isOwner(resource.data.organizerId) || isAdmin());
+      allow update: if isOwner(resource.data.organizerId) || isAdmin();
+      allow delete: if isOwner(resource.data.organizerId) || isAdmin();
     }
 
-    /**
-     * @description Informational articles and guides for users.
-     * @path /knowledge_resources/{resourceId}
-     * @allow (get, list) Any user, signed in or not, reading a knowledge resource.
-     * @deny (create) A regular user attempting to publish an article.
-     * @principle Implements public-read with writes restricted to authors (Professionals/Admins).
-     */
+    // -------------------------------
+    // Knowledge resources
     match /knowledge_resources/{resourceId} {
       allow get, list: if true;
       allow create: if isProfessionalOrAdmin() && request.resource.data.authorId == request.auth.uid;
-      allow update: if (isOwner(resource.data.authorId) || isAdmin());
-      allow delete: if (isOwner(resource.data.authorId) || isAdmin());
+      allow update: if isOwner(resource.data.authorId) || isAdmin();
+      allow delete: if isOwner(resource.data.authorId) || isAdmin();
     }
 
   }
