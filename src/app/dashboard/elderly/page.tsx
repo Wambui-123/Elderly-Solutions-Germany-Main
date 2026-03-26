@@ -2,24 +2,17 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useUser } from "@/firebase";
-import { data } from "@/lib/data"; // Keep using mock data for medications for now
-import type { Medication } from '@/lib/types';
-import { Bot, CheckCircle2, Pill } from 'lucide-react';
+import { Bot, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { MedicationSchedule } from '@/components/dashboard/elderly/medication-schedule';
 
 export default function ElderlyDashboardPage() {
     const { user } = useUser();
-    const medications: Medication[] = data.medications;
 
     if (!user) {
         return null; // Or a loading indicator
     }
-    
-    const morningMeds = medications.filter(m => m.time.includes('AM'));
-    const afternoonMeds = medications.filter(m => m.time.includes('PM'));
-
 
     return (
         <>
@@ -61,49 +54,7 @@ export default function ElderlyDashboardPage() {
                     </Card>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Today's Medication</CardTitle>
-                    <CardDescription>Your personal medication schedule.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="font-semibold mb-2">Morning</h3>
-                            <div className="space-y-3">
-                                {morningMeds.map(med => (
-                                    <div key={med.id} className="flex items-center gap-4">
-                                        <Pill className="h-5 w-5 text-primary" />
-                                        <div className='flex-1'>
-                                            <p className="font-medium">{med.name}</p>
-                                            <p className="text-xs text-muted-foreground">{med.dosage}</p>
-                                        </div>
-                                        <Button variant={med.status === 'Taken' ? 'ghost' : 'default'} size="sm" disabled={med.status === 'Taken'}>
-                                            {med.status === 'Taken' ? 'Taken' : 'Take'}
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <Separator />
-                        <div>
-                            <h3 className="font-semibold mb-2">Afternoon</h3>
-                            <div className="space-y-3">
-                                {afternoonMeds.map(med => (
-                                    <div key={med.id} className="flex items-center gap-4">
-                                        <Pill className="h-5 w-5 text-primary" />
-                                        <div className='flex-1'>
-                                            <p className="font-medium">{med.name}</p>
-                                            <p className="text-xs text-muted-foreground">{med.dosage}</p>
-                                        </div>
-                                        <Button variant={med.status === 'Taken' ? 'ghost' : 'default'} size="sm" disabled={med.status === 'Taken'}>
-                                            {med.status === 'Taken' ? 'Taken' : 'Take'}
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <MedicationSchedule />
             </div>
         </>
     );

@@ -1,28 +1,18 @@
 "use client";
 
-import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, UserPlus, Video } from 'lucide-react';
 import { useUser } from "@/firebase";
-import { data } from "@/lib/data"; // Keep using mock data for patients for now
-import type { Patient } from '@/lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserPlus } from "lucide-react";
+import { PatientList } from "@/components/dashboard/caregiver/patient-list";
+
 
 export default function CaregiverDashboardPage() {
     const { user } = useUser();
-    const patients: Patient[] = data.patients; // Keep using mock data
 
     if (!user) {
         return null; // Or a loading indicator
     }
-
-    const upcomingAppointment = {
-        patient: patients[1],
-        time: '3:00 PM',
-        type: 'Video Call',
-    };
 
     return (
         <>
@@ -36,58 +26,21 @@ export default function CaregiverDashboardPage() {
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
               <div className="space-y-6 lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Patient Overview</CardTitle>
-                    <CardDescription>Status of patients under your care.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-2">
-                    {patients.map((patient) => (
-                      <Card key={patient.id} className="flex items-center gap-4 p-4">
-                        <Image
-                          src={patient.avatarUrl}
-                          alt={`Photo of ${patient.name}`}
-                          width={64}
-                          height={64}
-                          className="h-16 w-16 rounded-full object-cover"
-                          data-ai-hint="smiling senior"
-                        />
-                        <div className="flex-1">
-                          <p className="font-semibold">{patient.name}</p>
-                          <p className="text-sm text-muted-foreground">{patient.condition}</p>
-                        </div>
-                        <Badge variant={patient.status === 'Stable' ? 'secondary' : 'destructive'}>{patient.status}</Badge>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
-
+                <PatientList />
                 <Card>
                     <CardHeader>
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
+                            {/* This section will be connected to real-time data from health records in a future step. */}
                             <div className="flex items-center">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={patients[0].avatarUrl} alt="Avatar" data-ai-hint="smiling senior" />
-                                    <AvatarFallback>HW</AvatarFallback>
-                                </Avatar>
-                                <div className="ml-4 space-y-1">
-                                    <p className="text-sm font-medium leading-none">{patients[0].name} reported high blood pressure.</p>
-                                    <p className="text-sm text-muted-foreground">15 minutes ago</p>
-                                </div>
-                                <Button variant="ghost" size="icon" className="ml-auto">
-                                    <Bell className="h-4 w-4" />
-                                </Button>
-                            </div>
-                             <div className="flex items-center">
                                 <Avatar className="flex h-9 w-9 items-center justify-center space-y-0 border">
                                    <UserPlus className="h-5 w-5 text-muted-foreground" />
                                 </Avatar>
                                 <div className="ml-4 space-y-1">
-                                    <p className="text-sm font-medium leading-none">New patient assigned: Erika Vogel</p>
-                                    <p className="text-sm text-muted-foreground">2 hours ago</p>
+                                    <p className="text-sm font-medium leading-none">Real-time patient activity will be shown here.</p>
+                                    <p className="text-sm text-muted-foreground">Coming soon</p>
                                 </div>
                             </div>
                         </div>
@@ -98,24 +51,11 @@ export default function CaregiverDashboardPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Upcoming Appointment</CardTitle>
+                    <CardTitle>Upcoming Appointments</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center text-center">
-                    <Image
-                      src={upcomingAppointment.patient.avatarUrl}
-                      alt={`Photo of ${upcomingAppointment.patient.name}`}
-                      width={80}
-                      height={80}
-                      className="h-20 w-20 rounded-full object-cover"
-                      data-ai-hint="smiling man"
-                    />
-                    <p className="mt-2 font-semibold">{upcomingAppointment.patient.name}</p>
-                    <p className="text-lg font-bold text-primary">{upcomingAppointment.time}</p>
-                    <p className="text-sm text-muted-foreground">{upcomingAppointment.type}</p>
-                    <Button className="mt-4 w-full">
-                      <Video className="mr-2 h-4 w-4" />
-                      Join Call
-                    </Button>
+                     {/* This section will be connected to the events collection in a future step. */}
+                    <p className="text-muted-foreground mt-4">Your upcoming appointments with patients will be displayed here.</p>
                   </CardContent>
                 </Card>
               </div>

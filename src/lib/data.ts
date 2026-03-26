@@ -1,4 +1,7 @@
-import type { User, Patient, VitalSign, Medication } from './types';
+import type { User } from './types';
+
+// Mock data is being phased out.
+// This file is kept to prevent breaking imports in components that have not yet been refactored.
 
 const users: User[] = [
     {
@@ -38,50 +41,9 @@ const users: User[] = [
     }
 ];
 
-const patients: Patient[] = [
-    {
-        id: 'p1',
-        name: 'Helga Wagner',
-        condition: 'Hypertension',
-        status: 'Critical',
-        avatarUrl: 'https://picsum.photos/seed/p1/200/200'
-    },
-    {
-        id: 'p2',
-        name: 'Günther Schulz',
-        condition: 'Diabetes Type 2',
-        status: 'Stable',
-        avatarUrl: 'https://picsum.photos/seed/p2/200/200'
-    },
-    {
-        id: 'p3',
-        name: 'Erika Vogel',
-        condition: 'Arthritis',
-        status: 'Stable',
-        avatarUrl: 'https://picsum.photos/seed/p3/200/200'
-    },
-];
-
-const vitals: VitalSign[] = [
-    { date: "Mon", heartRate: 75, bloodPressure: 120 },
-    { date: "Tue", heartRate: 78, bloodPressure: 122 },
-    { date: "Wed", heartRate: 80, bloodPressure: 125 },
-    { date: "Thu", heartRate: 77, bloodPressure: 121 },
-    { date: "Fri", heartRate: 82, bloodPressure: 128 },
-    { date: "Sat", heartRate: 79, bloodPressure: 124 },
-    { date: "Sun", heartRate: 85, bloodPressure: 130 },
-];
-
-const medications: Medication[] = [
-    { id: 'm1', name: 'Lisinopril', dosage: '10mg', time: '8:00 AM', status: 'Taken' },
-    { id: 'm2', name: 'Metformin', dosage: '500mg', time: '9:00 AM', status: 'Upcoming' },
-    { id: 'm3', name: 'Aspirin', dosage: '81mg', time: '9:00 AM', status: 'Upcoming' },
-    { id: 'm4', name: 'Simvastatin', dosage: '20mg', time: '8:00 PM', status: 'Upcoming' },
-];
-
 export const data = {
     users,
-    patients,
-    vitals,
-    medications,
+    patients: [],
+    vitals: [],
+    medications: [],
 }
