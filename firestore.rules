@@ -268,14 +268,16 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     /**
-     * @description Manages community events. Read access is open to all signed-in users, while writes are restricted.
+     * @description Manages community events. Read access is open to users who are attendees or organizers.
      * @path /events/{eventId}
      * @allow (update) The event organizer updating the event details.
      * @deny (delete) A regular attendee trying to delete the event.
      * @principle Differentiates access levels for organizers vs. attendees.
      */
     match /events/{eventId} {
-      allow get, list: if isSignedIn();
+      // A user can read an event document if they are an attendee, the organizer, or an admin.
+      // This single 'read' rule allows both direct 'get' requests and constrained 'list' queries to succeed.
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.attendeeIds || isOwner(resource.data.organizerId) || isAdmin());
       allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
       allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
       allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
