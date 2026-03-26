@@ -15,34 +15,65 @@ interface UserProfileData {
     role: Role;
 }
 
-// This function now safely creates a profile only if one doesn't already exist.
-export async function createUserProfile(user: FirebaseAuthUser, data: UserProfileData) {
+/**
+ * Creates the user document for a brand new user signing up with email/password.
+ * This function only writes, it does not read, to avoid race conditions with security rules.
+ */
+export async function handleUserRegistration(user: FirebaseAuthUser, data: UserProfileData) {
     const userDocRef = doc(firestore, 'user_profiles', user.uid);
 
-    // Check if the document already exists to avoid overwriting on subsequent logins.
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-        // If the document exists, we can just return its data.
-        // No need to write anything.
-        return docSnap.data() as User;
-    }
-
-    // If the document doesn't exist, create it.
     const userProfile: User = {
         id: user.uid,
         name: data.name,
         email: data.email!,
         role: data.role,
-        avatarUrl: user.photoURL || "", // Use Google photo or empty string
+        avatarUrl: user.photoURL || "",
         createdAt: serverTimestamp() as Timestamp,
-        hasCompletedOnboarding: false, // Set onboarding to false for new users
+        hasCompletedOnboarding: false,
         caregiverIds: [],
         professionalIds: [],
         managedPatientIds: [],
     };
+    // setDoc will create the document because it doesn't exist.
     await setDoc(userDocRef, userProfile);
     return userProfile;
 }
+
+/**
+ * Creates or updates a user profile during a Google Sign-In event.
+ * It reads the document first to check if the user is new, and then either
+ * creates the full profile or updates the existing one.
+ */
+export async function handleGoogleSignIn(user: FirebaseAuthUser) {
+    const userDocRef = doc(firestore, 'user_profiles', user.uid);
+    const docSnap = await getDoc(userDocRef);
+
+    if (docSnap.exists()) {
+        // If user exists, update their name and photo, but leave role and other data intact.
+        const updateData: Partial<User> = {
+            name: user.displayName || docSnap.data().name,
+            avatarUrl: user.photoURL || docSnap.data().avatarUrl,
+            updatedAt: serverTimestamp() as Timestamp
+        };
+        await updateDoc(userDocRef, updateData);
+    } else {
+        // If user does not exist, create a new profile with a default role.
+        const userProfile: User = {
+            id: user.uid,
+            name: user.displayName || 'Google User',
+            email: user.email!,
+            role: 'caregiver', // Default role for new Google sign-ups
+            avatarUrl: user.photoURL || "",
+            createdAt: serverTimestamp() as Timestamp,
+            hasCompletedOnboarding: false,
+            caregiverIds: [],
+            professionalIds: [],
+            managedPatientIds: [],
+        };
+        await setDoc(userDocRef, userProfile);
+    }
+}
+
 
 export async function getUserProfile(uid: string): Promise<User | null> {
     const userDocRef = doc(firestore, 'user_profiles', uid);
@@ -61,7 +92,6 @@ export function updateUserProfile(uid: string, data: Partial<User>) {
         updatedAt: serverTimestamp()
     }
     
-    // Non-blocking update with error handling
     updateDoc(userDocRef, dataToUpdate)
         .catch(error => {
             errorEmitter.emit(
@@ -72,7 +102,6 @@ export function updateUserProfile(uid: string, data: Partial<User>) {
                     requestResourceData: dataToUpdate,
                 })
             );
-            // Re-throw the original error to allow for local catch blocks if needed
             throw error;
         });
 }
@@ -80,7 +109,6 @@ export function updateUserProfile(uid: string, data: Partial<User>) {
 export async function findUserByEmail(email: string): Promise<User | null> {
     if (!email) return null;
     const usersRef = collection(firestore, 'user_profiles');
-    // Only allow searching for elderly users for privacy and security
     const q = query(usersRef, where('email', '==', email), where('role', '==', 'elderly'));
     
     const querySnapshot = await getDocs(q);
@@ -97,7 +125,6 @@ export async function linkUserToPatient(args: { caregiverOrProId: string; patien
     const patientDocRef = doc(firestore, 'user_profiles', patientId);
     const caregiverOrProDocRef = doc(firestore, 'user_profiles', caregiverOrProId);
 
-    // Step 1: Update patient document
     const patientDocSnap = await getDoc(patientDocRef);
     if (!patientDocSnap.exists()) {
         throw new Error("Patient document not found.");
@@ -107,12 +134,11 @@ export async function linkUserToPatient(args: { caregiverOrProId: string; patien
     if (role === 'caregiver') {
         const updatedCaregiverIds = Array.from(new Set([...(patientData.caregiverIds || []), caregiverOrProId]));
         await updateDoc(patientDocRef, { caregiverIds: updatedCaregiverIds, updatedAt: serverTimestamp() });
-    } else { // 'professional'
+    } else { 
         const updatedProfessionalIds = Array.from(new Set([...(patientData.professionalIds || []), caregiverOrProId]));
         await updateDoc(patientDocRef, { professionalIds: updatedProfessionalIds, updatedAt: serverTimestamp() });
     }
 
-    // Step 2: Update caregiver/professional document
     await updateDoc(caregiverOrProDocRef, { 
         managedPatientIds: arrayUnion(patientId),
         updatedAt: serverTimestamp() 

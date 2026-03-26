@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Terminal } from "lucide-react";
 import { useAuth } from "@/firebase";
-import { createUserProfile } from "@/firebase/users";
+import { handleGoogleSignIn as handleGoogleUserCreation } from "@/firebase/users";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -69,12 +69,7 @@ export function LoginForm() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // On first Google sign-in, create a user profile document
-      await createUserProfile(result.user, {
-          name: result.user.displayName || 'Google User',
-          email: result.user.email!,
-          role: 'caregiver' // Default role, can be changed in profile
-      });
+      await handleGoogleUserCreation(result.user);
       router.push('/dashboard');
     } catch (e: any) {
       setError(e.message);

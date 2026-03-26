@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/firebase";
-import { createUserProfile } from "@/firebase/users";
+import { handleUserRegistration } from "@/firebase/users";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -63,7 +63,7 @@ export function RegisterForm() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      await createUserProfile(userCredential.user, data);
+      await handleUserRegistration(userCredential.user, data);
       router.push('/dashboard');
     } catch (e: any) {
       setError(e.message);

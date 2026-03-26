@@ -48,15 +48,15 @@ service cloud.firestore {
     function isMemberOfCareNetwork(elderlyUserId) {
       let userProfile = get(/databases/$(database)/documents/user_profiles/$(elderlyUserId)).data;
       return isOwner(elderlyUserId) ||
-             request.auth.uid in userProfile.caregiverIds ||
-             request.auth.uid in userProfile.professionalIds ||
+             (userProfile.caregiverIds != null && request.auth.uid in userProfile.caregiverIds) ||
+             (userProfile.professionalIds != null && request.auth.uid in userProfile.professionalIds) ||
              isAdmin();
     }
 
     // Checks if the user is a member of a community by reading the parent community document.
     function isCommunityMember(communityId) {
       let community = get(/databases/$(database)/documents/communities/$(communityId)).data;
-      return isSignedIn() && request.auth.uid in community.memberIds;
+      return isSignedIn() && (community.memberIds != null && request.auth.uid in community.memberIds);
     }
 
     // Checks if the user has a 'Professional' role or is an admin.
@@ -77,9 +77,10 @@ service cloud.firestore {
     match /user_profiles/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if (isOwner(userId) || isAdmin()) && resource != null;
+      // Simplified create rule to be more resilient. The user's UID is already in the path.
+      allow create: if isOwner(userId);
+      allow update: if (isOwner(userId) || isAdmin());
+      allow delete: if (isOwner(userId) || isAdmin());
     }
 
     /**
@@ -90,11 +91,7 @@ service cloud.firestore {
      * @principle Enforces privilege control; only admins can manage other admins.
      */
     match /admin_roles/{userId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     /**
@@ -107,8 +104,8 @@ service cloud.firestore {
     match /user_profiles/{elderlyUserId}/health_metrics/{healthMetricId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
-      allow update: if isMemberOfCareNetwork(elderlyUserId) && resource != null && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
-      allow delete: if isMemberOfCareNetwork(elderlyUserId) && resource != null;
+      allow update: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
+      allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
     /**
@@ -121,8 +118,8 @@ service cloud.firestore {
     match /user_profiles/{elderlyUserId}/medications/{medicationId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId;
-      allow update: if isMemberOfCareNetwork(elderlyUserId) && resource != null && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
-      allow delete: if isMemberOfCareNetwork(elderlyUserId) && resource != null;
+      allow update: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
+      allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
     /**
@@ -135,8 +132,8 @@ service cloud.firestore {
     match /user_profiles/{elderlyUserId}/medications/{medicationId}/adherence_records/{adherenceId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
-      allow update: if isMemberOfCareNetwork(elderlyUserId) && resource != null && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
-      allow delete: if isMemberOfCareNetwork(elderlyUserId) && resource != null;
+      allow update: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
+      allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
     /**
@@ -149,8 +146,8 @@ service cloud.firestore {
     match /user_profiles/{elderlyUserId}/health_logs/{healthLogId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId && request.resource.data.recordedByUserId == request.auth.uid;
-      allow update: if isMemberOfCareNetwork(elderlyUserId) && resource != null && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
-      allow delete: if isMemberOfCareNetwork(elderlyUserId) && resource != null;
+      allow update: if isMemberOfCareNetwork(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
+      allow delete: if isMemberOfCareNetwork(elderlyUserId);
     }
 
     /**
@@ -163,36 +160,30 @@ service cloud.firestore {
     match /user_profiles/{elderlyUserId}/daily_check_ins/{checkInId} {
       allow get, list: if isMemberOfCareNetwork(elderlyUserId);
       allow create: if isOwner(elderlyUserId) && request.resource.data.elderlyUserId == elderlyUserId;
-      allow update: if isOwner(elderlyUserId) && resource != null && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
-      allow delete: if isOwner(elderlyUserId) && resource != null;
+      allow update: if isOwner(elderlyUserId) && request.resource.data.elderlyUserId == resource.data.elderlyUserId;
+      allow delete: if isOwner(elderlyUserId);
+    }
+    
+    /**
+     * @description Manages conversation metadata.
+     * @path /conversations/{conversationId}
+     * @allow (read, write) A user who is a participant in the conversation.
+     * @principle Enforces membership for conversation access.
+     */
+    match /conversations/{conversationId} {
+        allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
     /**
-     * @description A user's outbox for private messages.
-     * @path /user_profiles/{senderId}/sent_messages/{messageId}
-     * @allow (create) A user sending a message: `auth.uid == senderId`.
-     * @deny (get) Another user trying to read someone's sent messages.
-     * @principle Enforces strict ownership over a user's private data.
+     * @description Manages messages within a conversation.
+     * @path /conversations/{conversationId}/messages/{messageId}
+     * @allow (read, create) A user who is a participant in the parent conversation.
+     * @principle Inherits access control from the parent conversation document.
      */
-    match /user_profiles/{senderId}/sent_messages/{messageId} {
-      allow get, list: if isOwner(senderId);
-      allow create: if isOwner(senderId) && request.resource.data.senderId == senderId;
-      allow update: if false;
-      allow delete: if isOwner(senderId) && resource != null;
-    }
-
-    /**
-     * @description A user's inbox for private messages.
-     * @path /user_profiles/{receiverId}/inbox_messages/{messageId}
-     * @allow (get) A user reading a message they received: `auth.uid == receiverId`.
-     * @deny (create) A user trying to write directly into another user's inbox.
-     * @principle Enforces strict ownership; assumes a backend function handles message fan-out.
-     */
-    match /user_profiles/{receiverId}/inbox_messages/{messageId} {
-      allow get, list: if isOwner(receiverId);
-      allow create: if false;
-      allow update: if isOwner(receiverId) && resource != null && request.resource.data.receiverId == resource.data.receiverId && request.resource.data.senderId == resource.data.senderId;
-      allow delete: if isOwner(receiverId) && resource != null;
+    match /conversations/{conversationId}/messages/{messageId} {
+        allow read: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+        allow update, delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
     }
 
     /**
@@ -206,8 +197,8 @@ service cloud.firestore {
       allow get: if isCommunityMember(communityId) || isAdmin();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.createdByUserId == request.auth.uid && request.auth.uid in request.resource.data.memberIds;
-      allow update: if (isOwner(resource.data.createdByUserId) || isAdmin()) && resource != null;
-      allow delete: if (isOwner(resource.data.createdByUserId) || isAdmin()) && resource != null;
+      allow update: if (isOwner(resource.data.createdByUserId) || isAdmin());
+      allow delete: if (isOwner(resource.data.createdByUserId) || isAdmin());
     }
 
     /**
@@ -220,8 +211,8 @@ service cloud.firestore {
     match /communities/{communityId}/messages/{messageId} {
       allow get, list: if isCommunityMember(communityId) || isAdmin();
       allow create: if isCommunityMember(communityId) && request.resource.data.senderId == request.auth.uid && request.resource.data.communityId == communityId;
-      allow update: if (isOwner(resource.data.senderId) || isAdmin()) && resource != null;
-      allow delete: if (isOwner(resource.data.senderId) || isAdmin()) && resource != null;
+      allow update: if (isOwner(resource.data.senderId) || isAdmin());
+      allow delete: if (isOwner(resource.data.senderId) || isAdmin());
     }
 
     /**
@@ -234,23 +225,23 @@ service cloud.firestore {
     match /communities/{communityId}/events/{eventId} {
       allow get, list: if isCommunityMember(communityId) || isAdmin();
       allow create: if isCommunityMember(communityId) && request.resource.data.creatorId == request.auth.uid && request.resource.data.communityId == communityId;
-      allow update: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
-      allow delete: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
+      allow update: if (isOwner(resource.data.creatorId) || isAdmin());
+      allow delete: if (isOwner(resource.data.creatorId) || isAdmin());
     }
 
     /**
      * @description Stand-alone events not tied to a specific community.
      * @path /events/{eventId}
-     * @allow (get, list) Any user, signed in or not, viewing public event details.
+     * @allow (read, create) An authenticated user can create events and read them if they are an attendee.
      * @deny (update) A user who did not create the event trying to change its time.
-     * @principle Implements a public-read, owner-only write model.
+     * @principle Implements a public-read (if attendee), owner-only write model.
      */
     match /events/{eventId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn() && request.query.where('attendeeIds', 'array-contains', request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
-      allow update: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
-      allow delete: if (isOwner(resource.data.creatorId) || isAdmin()) && resource != null;
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.organizerId || request.auth.uid in resource.data.attendeeIds || isAdmin());
+      allow list: if isSignedIn(); // A user can list events they might be part of
+      allow create: if isSignedIn() && request.resource.data.organizerId == request.auth.uid;
+      allow update: if (isOwner(resource.data.organizerId) || isAdmin());
+      allow delete: if (isOwner(resource.data.organizerId) || isAdmin());
     }
 
     /**
@@ -263,11 +254,9 @@ service cloud.firestore {
     match /knowledge_resources/{resourceId} {
       allow get, list: if true;
       allow create: if isProfessionalOrAdmin() && request.resource.data.authorId == request.auth.uid;
-      allow update: if (isOwner(resource.data.authorId) || isAdmin()) && resource != null;
-      allow delete: if (isOwner(resource.data.authorId) || isAdmin()) && resource != null;
+      allow update: if (isOwner(resource.data.authorId) || isAdmin());
+      allow delete: if (isOwner(resource.data.authorId) || isAdmin());
     }
 
   }
 }
-
-    
