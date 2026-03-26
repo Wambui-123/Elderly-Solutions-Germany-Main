@@ -10,10 +10,10 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import wav from 'wav';
 
-export const TextToSpeechAIInputSchema = z.string();
+const TextToSpeechAIInputSchema = z.string();
 export type TextToSpeechAIInput = z.infer<typeof TextToSpeechAIInputSchema>;
 
-export const TextToSpeechAIOutputSchema = z.object({
+const TextToSpeechAIOutputSchema = z.object({
   media: z.string().describe('The audio data URI.'),
 });
 export type TextToSpeechAIOutput = z.infer<typeof TextToSpeechAIOutputSchema>;
