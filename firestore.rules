@@ -100,13 +100,12 @@ service cloud.firestore {
      * @principle Enforces Self-Creation and Ownership. A user has full control over their own document.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      // Allow signed-in users to perform queries (e.g., searching for patients by email).
-      // Client-side queries MUST be securely constructed to prevent over-fetching.
-      allow list: if isSignedIn();
+      // Allow signed-in users to read profiles (for searching/linking) and list them.
+      allow get, list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId) || isAdmin();
+      // Allow users to update their own profile, or an admin to update any profile.
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       /**
        * @description Manages a user's 1-to-1 accessibility settings.
@@ -275,14 +274,12 @@ service cloud.firestore {
      * @principle Differentiates access levels for organizers vs. attendees.
      */
     match /events/{eventId} {
-      // A user can read a single event document if they are an attendee, the organizer, or an admin.
-      allow get: if isSignedIn() && (request.auth.uid in resource.data.attendeeIds || isOwner(resource.data.organizerId) || isAdmin());
-      // A user can list events (e.g., query for their appointments).
-      // Security is layered: this allows the query to execute, but Firestore then checks the 'get' permission
-      // on each individual document returned. If the client query is not specific enough (e.g., doesn't include
-      // `where('attendeeIds', 'array-contains', request.auth.uid)`), the overall query will fail because
-      // the `get` rule will deny access to one or more of the results.
-      allow list: if isSignedIn();
+      // A user can read an event document if they are an attendee or the organizer.
+      // This applies to both `get` and `list` operations. Queries on this collection
+      // MUST include a `where` clause that filters by `attendeeIds` or `organizerId`
+      // to ensure the query only returns documents the user is allowed to see.
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.attendeeIds || isOwner(resource.data.organizerId));
+      
       allow create: if isSignedIn() && isOwner(request.resource.data.organizerId);
       allow update: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
       allow delete: if resource != null && (isOwner(resource.data.organizerId) || isAdmin());
